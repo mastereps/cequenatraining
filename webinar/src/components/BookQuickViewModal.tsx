@@ -5,6 +5,7 @@ import type Book from "../entities/Book";
 import { formatPrice } from "../utils/formatPrice";
 import { bookGalleryBySlug, resolveBookImage } from "../utils/bookImages";
 import { useCart } from "../store/CartContext";
+import { getPurchaseOptions } from "../utils/bookAvailability";
 
 type Props = {
   open: boolean;
@@ -83,6 +84,7 @@ const BookQuickViewModal = ({ open, book, loading, error, onClose }: Props) => {
   const hasMultipleImages = images.length > 1;
   const activeImageUrl = images[activeImageIndex];
   const description = book?.short_description || book?.details;
+  const purchaseOptions = getPurchaseOptions(book?.slug);
   const slideOffsetClass = !hasInteracted
     ? ""
     : slideDirection === "next"
@@ -213,6 +215,11 @@ const BookQuickViewModal = ({ open, book, loading, error, onClose }: Props) => {
                     {description}
                   </p>
                 )}
+                {!purchaseOptions.internalAvailable && (
+                  <p className="text-xs uppercase tracking-[0.2em] text-amber-500">
+                    {purchaseOptions.note || "External purchase only."}
+                  </p>
+                )}
                 <div className="pt-4">
                   <Link
                     to={`/products/${book.slug}`}
@@ -222,7 +229,8 @@ const BookQuickViewModal = ({ open, book, loading, error, onClose }: Props) => {
                     View details
                   </Link>
                 </div>
-                <div className="mt-4">
+                {purchaseOptions.internalAvailable && (
+                  <div className="mt-4">
                   <p className="mb-2    text-slate-500 dark:text-slate-400">
                     Quantity
                   </p>
@@ -272,7 +280,28 @@ const BookQuickViewModal = ({ open, book, loading, error, onClose }: Props) => {
                       Add to cart
                     </button>
                   </div>
-                </div>
+                  </div>
+                )}
+                {purchaseOptions.externalLinks.length > 0 && (
+                  <div className="mt-4">
+                    <p className="mb-2 text-xs uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
+                      Buy on
+                    </p>
+                    <div className="flex flex-wrap gap-3">
+                      {purchaseOptions.externalLinks.map((link) => (
+                        <a
+                          key={link.url}
+                          href={link.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center justify-center rounded border border-slate-300 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+                        >
+                          {link.label}
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </>
             )}
           </div>

@@ -4,6 +4,7 @@ import type Book from "../entities/Book";
 import { formatPrice } from "../utils/formatPrice";
 import { resolveBookImage } from "../utils/bookImages";
 import { useCart } from "../store/CartContext";
+import { getPurchaseOptions } from "../utils/bookAvailability";
 
 const clampQuantity = (value: number) => Math.min(99, Math.max(1, value));
 
@@ -83,6 +84,7 @@ const BookDetails = () => {
     book.images?.[0] || book.cover_image_url
   );
   const description = book.details || book.short_description;
+  const purchaseOptions = getPurchaseOptions(book.slug);
 
   return (
     <section className="max-w-[1240px] mx-auto px-4 pt-32 pb-20">
@@ -117,54 +119,87 @@ const BookDetails = () => {
             <p className="mt-3 text-2xl font-semibold text-lantern">
               {formatPrice(book.price_cents, book.currency)}
             </p>
+            {!purchaseOptions.internalAvailable && (
+              <p className="mt-2 text-xs uppercase tracking-[0.2em] text-amber-500">
+                {purchaseOptions.note || "External purchase only."}
+              </p>
+            )}
           </div>
 
-          <div>
-            <p className="mb-2 text-xs uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
-              Quantity
-            </p>
-            <div className="inline-flex items-center gap-2 rounded border border-slate-300 px-2 py-1 dark:border-slate-700">
+          {purchaseOptions.internalAvailable && (
+            <>
+              <div>
+                <p className="mb-2 text-xs uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
+                  Quantity
+                </p>
+                <div className="inline-flex items-center gap-2 rounded border border-slate-300 px-2 py-1 dark:border-slate-700">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setQuantity((prev) => clampQuantity(prev - 1))
+                    }
+                    className="h-9 w-9 rounded text-lg text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
+                  >
+                    −
+                  </button>
+                  <input
+                    type="number"
+                    min={1}
+                    max={99}
+                    value={quantity}
+                    onChange={(event) =>
+                      setQuantity(
+                        clampQuantity(Number(event.target.value || 1))
+                      )
+                    }
+                    className="h-9 w-14 bg-transparent text-center text-sm outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setQuantity((prev) => clampQuantity(prev + 1))
+                    }
+                    className="h-9 w-9 rounded text-lg text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+
               <button
                 type="button"
-                onClick={() =>
-                  setQuantity((prev) => clampQuantity(prev - 1))
-                }
-                className="h-9 w-9 rounded text-lg text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
+                onClick={() => book && addItem(book, quantity)}
+                className="w-full rounded border border-slate-900 py-3 text-sm font-semibold uppercase tracking-[0.2em] transition hover:bg-slate-900 hover:text-white dark:border-white dark:hover:bg-white dark:hover:text-black"
               >
-                −
+                Add to cart
               </button>
-              <input
-                type="number"
-                min={1}
-                max={99}
-                value={quantity}
-                onChange={(event) =>
-                  setQuantity(clampQuantity(Number(event.target.value || 1)))
-                }
-                className="h-9 w-14 bg-transparent text-center text-sm outline-none"
-              />
-              <button
-                type="button"
-                onClick={() =>
-                  setQuantity((prev) => clampQuantity(prev + 1))
-                }
-                className="h-9 w-9 rounded text-lg text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
-              >
-                +
-              </button>
+            </>
+          )}
+
+          {purchaseOptions.externalLinks.length > 0 && (
+            <div className="rounded border border-slate-200 p-4 dark:border-slate-800">
+              <p className="mb-2 text-xs uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
+                {purchaseOptions.internalAvailable
+                  ? "Also available on"
+                  : "Buy internationally"}
+              </p>
+              <div className="flex flex-wrap gap-3">
+                {purchaseOptions.externalLinks.map((link) => (
+                  <a
+                    key={link.url}
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center rounded border border-slate-300 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+                  >
+                    {link.label}
+                  </a>
+                ))}
+              </div>
             </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => book && addItem(book, quantity)}
-            className="w-full rounded border border-slate-900 py-3 text-sm font-semibold uppercase tracking-[0.2em] transition hover:bg-slate-900 hover:text-white dark:border-white dark:hover:bg-white dark:hover:text-black"
-          >
-            Add to cart
-          </button>
+          )}
         </div>
       </div>
-
       {description && (
         <div className="mt-12 border-t border-slate-200 pt-8 dark:border-slate-800">
           <h2 className="text-2xl font-heading uppercase mb-4">
@@ -223,3 +258,4 @@ const BookDetails = () => {
 };
 
 export default BookDetails;
+

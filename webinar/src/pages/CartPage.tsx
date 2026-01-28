@@ -9,7 +9,7 @@ const CartPage = () => {
   const currency = items[0]?.currency || "PHP";
 
   return (
-    <section className="max-w-[1240px] mx-auto px-4 pt-32 pb-20">
+    <section className="max-w-[1240px] mx-auto px-4 pt-32 pb-20 text-slate-900 dark:text-white">
       <h1 className="text-3xl font-heading uppercase mb-10">Shopping Cart</h1>
 
       {items.length === 0 ? (
@@ -27,9 +27,9 @@ const CartPage = () => {
             {items.map((item) => (
               <div
                 key={item.id}
-                className="flex flex-col gap-6 border-b border-white/10 pb-6 md:flex-row md:items-center"
+                className="flex flex-col gap-6 border-b border-slate-200 pb-6 md:flex-row md:items-center dark:border-white/10"
               >
-                <div className="h-24 w-24 rounded bg-white/5 p-2">
+                <div className="h-24 w-24 rounded bg-slate-100 p-2 dark:bg-white/5">
                   {item.image_url ? (
                     <img
                       src={item.image_url}
@@ -45,15 +45,15 @@ const CartPage = () => {
                   <button
                     type="button"
                     onClick={() => removeItem(item.id)}
-                    className="mt-2 text-xs uppercase tracking-[0.2em] text-white/60 hover:text-white"
+                    className="mt-2 text-xs uppercase tracking-[0.2em] text-slate-500 hover:text-slate-900 dark:text-white/60 dark:hover:text-white"
                   >
                     Remove
                   </button>
                 </div>
-                <div className="text-sm text-white/70">
+                <div className="text-sm text-slate-600 dark:text-white/70">
                   {formatPrice(item.price_cents, item.currency)}
                 </div>
-                <div className="inline-flex items-center gap-2 rounded border border-white/20 px-2 py-1">
+                <div className="inline-flex items-center gap-2 rounded border border-slate-300 px-2 py-1 dark:border-white/20">
                   <button
                     type="button"
                     onClick={() =>
@@ -66,7 +66,7 @@ const CartPage = () => {
                     className={`h-8 w-8 rounded text-lg ${
                       item.quantity <= 1
                         ? "cursor-not-allowed opacity-50"
-                        : "hover:bg-white/10"
+                        : "hover:bg-slate-100 dark:hover:bg-white/10"
                     }`}
                   >
                     -
@@ -82,7 +82,7 @@ const CartPage = () => {
                         clampQuantity(item.quantity + 1)
                       )
                     }
-                    className="h-8 w-8 rounded text-lg hover:bg-white/10"
+                    className="h-8 w-8 rounded text-lg hover:bg-slate-100 dark:hover:bg-white/10"
                   >
                     +
                   </button>
@@ -97,15 +97,15 @@ const CartPage = () => {
             ))}
           </div>
 
-          <div className="rounded border border-white/10 bg-[#0f0f0f] p-6">
+          <div className="rounded border border-slate-200 bg-white p-6 dark:border-white/10 dark:bg-[#0f0f0f]">
             <h2 className="text-lg font-semibold uppercase mb-4">Summary</h2>
-            <div className="flex items-center justify-between text-sm uppercase tracking-[0.2em] text-white/60">
+            <div className="flex items-center justify-between text-sm uppercase tracking-[0.2em] text-slate-500 dark:text-white/60">
               <span>Subtotal</span>
-              <span className="text-white">
+              <span className="text-slate-900 dark:text-white">
                 {formatPrice(subtotalCents, currency)}
               </span>
             </div>
-            <p className="mt-3 text-xs text-white/50">
+            <p className="mt-3 text-xs text-slate-500 dark:text-white/50">
               Taxes and shipping calculated at checkout.
             </p>
             <Link

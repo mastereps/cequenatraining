@@ -8,6 +8,7 @@ import {
 } from "react";
 import type Book from "../entities/Book";
 import { resolveBookImage } from "../utils/bookImages";
+import { getPurchaseOptions } from "../utils/bookAvailability";
 
 export type CartItem = {
   id: number;
@@ -79,6 +80,11 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
 
   const addItem = (book: Book, quantity = 1) => {
     if (!book) return;
+    const purchaseOptions = getPurchaseOptions(book.slug);
+    if (!purchaseOptions.internalAvailable) {
+      showNotice("This book is available externally only.");
+      return;
+    }
     const nextQuantity = clampQuantity(quantity);
     const imageUrl = resolveBookImage(book.slug, book.cover_image_url);
 

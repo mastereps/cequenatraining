@@ -9,6 +9,7 @@ import type Book from "../../entities/Book";
 import { formatPrice } from "../../utils/formatPrice";
 import { resolveBookImage } from "../../utils/bookImages";
 import { useCart } from "../../store/CartContext";
+import { getPurchaseOptions } from "../../utils/bookAvailability";
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
@@ -150,6 +151,9 @@ const FeaturedBooksSection = () => {
               key={book.slug || book.id}
               className="flex flex-col items-center"
             >
+              {(() => {
+                const purchaseOptions = getPurchaseOptions(book.slug);
+                return (
               <div className="bs_item relative max-w-56 cursor-pointer">
                 <div className="bs-img max-h-56 relative overflow-hidden">
                   <img
@@ -177,10 +181,21 @@ const FeaturedBooksSection = () => {
                     </div>
                     <button
                       type="button"
-                      onClick={() => addItem(book)}
+                      onClick={() => {
+                        if (purchaseOptions.internalAvailable) {
+                          addItem(book);
+                          return;
+                        }
+                        const url = purchaseOptions.externalLinks[0]?.url;
+                        if (url) {
+                          window.open(url, "_blank", "noopener,noreferrer");
+                        }
+                      }}
                       className="book_cta absolute inline-block px-8 py-3 font-text font-bold uppercase tracking-[0.08em] bg-lantern text-white transition-all duration-300 hover:bg-lantern hover:text-white hover:shadow-[0_10px_30px_rgba(97,176,139,0.35)] dark:hover:bg-white dark:hover:text-black dark:hover:shadow-[0_0_0_.2rem_#fff] z-20 bottom-6 left-1/2 w-[95%] text-center"
                     >
-                      Get Copy
+                      {purchaseOptions.internalAvailable
+                        ? "Get Copy"
+                        : "Buy Internationally"}
                     </button>
                   </div>
                 </div>
@@ -191,6 +206,8 @@ const FeaturedBooksSection = () => {
                   </Link>
                 </div>
               </div>
+                );
+              })()}
             </SwiperSlide>
           ))}
         </Swiper>
