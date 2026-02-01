@@ -8,4 +8,5 @@ export default interface Book {
   short_description?: string | null;
   details?: string | null;
   images?: string[];
+  in_stock?: boolean;
 }

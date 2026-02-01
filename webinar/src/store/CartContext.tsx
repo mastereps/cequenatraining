@@ -80,6 +80,10 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
 
   const addItem = (book: Book, quantity = 1) => {
     if (!book) return;
+    if (book.in_stock === false) {
+      showNotice("This book is currently out of stock.");
+      return;
+    }
     const purchaseOptions = getPurchaseOptions(book.slug);
     if (!purchaseOptions.internalAvailable) {
       showNotice("This book is available externally only.");

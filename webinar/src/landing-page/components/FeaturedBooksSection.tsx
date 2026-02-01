@@ -153,59 +153,75 @@ const FeaturedBooksSection = () => {
             >
               {(() => {
                 const purchaseOptions = getPurchaseOptions(book.slug);
+                const isInStock = book.in_stock !== false;
                 return (
-              <div className="bs_item relative max-w-56 cursor-pointer">
-                <div className="bs-img max-h-56 relative overflow-hidden">
-                  <img
-                    src={resolveBookImage(book.slug, book.cover_image_url)}
-                    alt={book.title}
-                    width={225}
-                    height={225}
-                    className="object-contain w-56 h-56"
-                  />
-                  <div className="bs-content-hover">
-                    <div className="absolute z-20 top-7 right-5 group">
-                      <div className="pointer-events-none absolute right-12 top-1/2 -translate-y-1/2 -translate-x-3 opacity-0 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200">
-                        <div className="relative font-text bg-lantern text-white text-sm font-semibold px-3 py-1 rounded shadow-lg whitespace-nowrap">
-                          Quick view
-                          <span className="absolute top-1/2 right-[-7px] -translate-y-1/2 w-0 h-0 border-y-8 border-y-transparent border-l-8 border-l-lantern"></span>
+                  <div className="bs_item relative max-w-56 cursor-pointer">
+                    <div className="bs-img max-h-56 relative overflow-hidden">
+                      <Link to={`/products/${book.slug}`} className="block">
+                        <img
+                          src={resolveBookImage(
+                            book.slug,
+                            book.cover_image_url,
+                          )}
+                          alt={book.title}
+                          width={225}
+                          height={225}
+                          className="object-contain w-56 h-56"
+                        />
+                      </Link>
+                      <div className="bs-content-hover">
+                        <div className="absolute z-20 top-7 right-5 group">
+                          <div className="pointer-events-none absolute right-12 top-1/2 -translate-y-1/2 -translate-x-3 opacity-0 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200">
+                            <div className="relative font-text bg-lantern text-white text-sm font-semibold px-3 py-1 rounded shadow-lg whitespace-nowrap">
+                              Quick view
+                              <span className="absolute top-1/2 right-[-7px] -translate-y-1/2 w-0 h-0 border-y-8 border-y-transparent border-l-8 border-l-lantern"></span>
+                            </div>
+                          </div>
+                          <button
+                            className="fi_eye cursor-pointer flex h-10 w-10 items-center justify-center rounded-full dark:bg-white bg-black shadow-md opacity-0 transition-all duration-200 hover:scale-110"
+                            onClick={() => openQuickView(book.slug)}
+                            aria-label={`Quick view ${book.title}`}
+                          >
+                            <FiEye className="dark:text-black text-white" />
+                          </button>
                         </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!isInStock) return;
+                            if (purchaseOptions.internalAvailable) {
+                              addItem(book);
+                              return;
+                            }
+                            const url = purchaseOptions.externalLinks[0]?.url;
+                            if (url) {
+                              window.open(url, "_blank", "noopener,noreferrer");
+                            }
+                          }}
+                          disabled={!isInStock}
+                          className={`book_cta absolute inline-block px-8 py-3 font-text font-bold uppercase tracking-[0.08em] z-20 bottom-6 left-1/2 w-[95%] text-center transition-all duration-300 ${
+                            isInStock
+                              ? "cursor-pointer bg-lantern text-white hover:bg-lantern hover:text-white hover:shadow-[0_10px_30px_rgba(97,176,139,0.35)] dark:hover:bg-white dark:hover:text-black dark:hover:shadow-[0_0_0_.2rem_#fff]"
+                              : "cursor-not-allowed bg-slate-300 text-slate-500 dark:bg-slate-700 dark:text-slate-300"
+                          }`}
+                        >
+                          {isInStock
+                            ? purchaseOptions.internalAvailable
+                              ? "Get Copy"
+                              : "Buy Global"
+                            : "Out of stock"}
+                        </button>
                       </div>
-                      <button
-                        className="fi_eye cursor-pointer flex h-10 w-10 items-center justify-center rounded-full dark:bg-white bg-black shadow-md opacity-0 transition-all duration-200 hover:scale-110"
-                        onClick={() => openQuickView(book.slug)}
-                        aria-label={`Quick view ${book.title}`}
-                      >
-                        <FiEye className="dark:text-black text-white" />
-                      </button>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (purchaseOptions.internalAvailable) {
-                          addItem(book);
-                          return;
-                        }
-                        const url = purchaseOptions.externalLinks[0]?.url;
-                        if (url) {
-                          window.open(url, "_blank", "noopener,noreferrer");
-                        }
-                      }}
-                      className="book_cta absolute inline-block px-8 py-3 font-text font-bold uppercase tracking-[0.08em] bg-lantern text-white transition-all duration-300 hover:bg-lantern hover:text-white hover:shadow-[0_10px_30px_rgba(97,176,139,0.35)] dark:hover:bg-white dark:hover:text-black dark:hover:shadow-[0_0_0_.2rem_#fff] z-20 bottom-6 left-1/2 w-[95%] text-center"
-                    >
-                      {purchaseOptions.internalAvailable
-                        ? "Get Copy"
-                        : "Buy Internationally"}
-                    </button>
+                    <div className="bs-description mt-3">
+                      <Link to={`/products/${book.slug}`} className="uppercase">
+                        <h3 className="font-bold mb-2">{book.title}</h3>
+                        <span>
+                          {formatPrice(book.price_cents, book.currency)}
+                        </span>
+                      </Link>
+                    </div>
                   </div>
-                </div>
-                <div className="bs-description mt-3">
-                  <Link to={`/products/${book.slug}`} className="uppercase">
-                    <h3 className="font-bold mb-2">{book.title}</h3>
-                    <span>{formatPrice(book.price_cents, book.currency)}</span>
-                  </Link>
-                </div>
-              </div>
                 );
               })()}
             </SwiperSlide>

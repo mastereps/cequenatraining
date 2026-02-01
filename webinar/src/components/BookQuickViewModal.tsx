@@ -85,6 +85,7 @@ const BookQuickViewModal = ({ open, book, loading, error, onClose }: Props) => {
   const activeImageUrl = images[activeImageIndex];
   const description = book?.short_description || book?.details;
   const purchaseOptions = getPurchaseOptions(book?.slug);
+  const isInStock = book?.in_stock !== false;
   const slideOffsetClass = !hasInteracted
     ? ""
     : slideDirection === "next"
@@ -220,6 +221,11 @@ const BookQuickViewModal = ({ open, book, loading, error, onClose }: Props) => {
                     {purchaseOptions.note || "External purchase only."}
                   </p>
                 )}
+                {!isInStock && (
+                  <p className="text-xs uppercase tracking-[0.2em] text-amber-500">
+                    Out of stock. Please check back soon.
+                  </p>
+                )}
                 <div className="pt-4">
                   <Link
                     to={`/products/${book.slug}`}
@@ -229,7 +235,7 @@ const BookQuickViewModal = ({ open, book, loading, error, onClose }: Props) => {
                     View details
                   </Link>
                 </div>
-                {purchaseOptions.internalAvailable && (
+                {purchaseOptions.internalAvailable && isInStock && (
                   <div className="mt-4">
                   <p className="mb-2    text-slate-500 dark:text-slate-400">
                     Quantity
@@ -281,6 +287,15 @@ const BookQuickViewModal = ({ open, book, loading, error, onClose }: Props) => {
                     </button>
                   </div>
                   </div>
+                )}
+                {purchaseOptions.internalAvailable && !isInStock && (
+                  <button
+                    type="button"
+                    disabled
+                    className="mt-4 w-full cursor-not-allowed rounded border border-slate-400 px-5 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-slate-400"
+                  >
+                    Out of stock
+                  </button>
                 )}
                 {purchaseOptions.externalLinks.length > 0 && (
                   <div className="mt-4">

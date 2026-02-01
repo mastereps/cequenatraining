@@ -81,10 +81,11 @@ const BookDetails = () => {
 
   const imageUrl = resolveBookImage(
     book.slug,
-    book.images?.[0] || book.cover_image_url
+    book.images?.[0] || book.cover_image_url,
   );
   const description = book.details || book.short_description;
   const purchaseOptions = getPurchaseOptions(book.slug);
+  const isInStock = book.in_stock !== false;
 
   return (
     <section className="max-w-[1240px] mx-auto px-4 pt-32 pb-20">
@@ -93,9 +94,7 @@ const BookDetails = () => {
           Home
         </Link>{" "}
         /{" "}
-        <span className="text-slate-700 dark:text-slate-200">
-          {book.title}
-        </span>
+        <span className="text-slate-700 dark:text-slate-200">{book.title}</span>
       </div>
 
       <div className="grid gap-10 lg:grid-cols-[1.1fr_1fr]">
@@ -124,9 +123,14 @@ const BookDetails = () => {
                 {purchaseOptions.note || "External purchase only."}
               </p>
             )}
+            {!isInStock && (
+              <p className="mt-2 text-xs uppercase tracking-[0.2em] text-amber-500">
+                Out of stock. Please check back soon.
+              </p>
+            )}
           </div>
 
-          {purchaseOptions.internalAvailable && (
+          {purchaseOptions.internalAvailable && isInStock && (
             <>
               <div>
                 <p className="mb-2 text-xs uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
@@ -149,7 +153,7 @@ const BookDetails = () => {
                     value={quantity}
                     onChange={(event) =>
                       setQuantity(
-                        clampQuantity(Number(event.target.value || 1))
+                        clampQuantity(Number(event.target.value || 1)),
                       )
                     }
                     className="h-9 w-14 bg-transparent text-center text-sm outline-none"
@@ -175,13 +179,22 @@ const BookDetails = () => {
               </button>
             </>
           )}
+          {purchaseOptions.internalAvailable && !isInStock && (
+            <button
+              type="button"
+              disabled
+              className="w-full cursor-not-allowed rounded border border-slate-400 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-slate-400"
+            >
+              Out of stock
+            </button>
+          )}
 
           {purchaseOptions.externalLinks.length > 0 && (
             <div className="rounded border border-slate-200 p-4 dark:border-slate-800">
               <p className="mb-2 text-xs uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
                 {purchaseOptions.internalAvailable
                   ? "Also available on"
-                  : "Buy internationally"}
+                  : "Buy Global"}
               </p>
               <div className="flex flex-wrap gap-3">
                 {purchaseOptions.externalLinks.map((link) => (
@@ -258,4 +271,3 @@ const BookDetails = () => {
 };
 
 export default BookDetails;
-

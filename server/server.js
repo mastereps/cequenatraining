@@ -86,7 +86,8 @@ app.get("/api/books", async (req, res) => {
         currency,
         cover_image_url,
         short_description,
-        details
+        details,
+        in_stock
       FROM books
       WHERE is_active = true
       ORDER BY id ASC
@@ -117,7 +118,8 @@ app.get("/api/books/:slug", async (req, res) => {
         currency,
         cover_image_url,
         short_description,
-        details
+        details,
+        in_stock
       FROM books
       WHERE slug = $1
         AND is_active = true
@@ -181,7 +183,8 @@ app.get("/api/books/:slug/related", async (req, res) => {
         b.title,
         b.price_cents,
         b.currency,
-        b.cover_image_url
+        b.cover_image_url,
+        b.in_stock
       FROM related_books rb
       JOIN books b ON b.id = rb.related_book_id
       WHERE rb.book_id = $1
@@ -204,7 +207,8 @@ app.get("/api/books/:slug/related", async (req, res) => {
         b.title,
         b.price_cents,
         b.currency,
-        b.cover_image_url
+        b.cover_image_url,
+        b.in_stock
       FROM book_categories bc
       JOIN book_categories bc2 ON bc2.category_id = bc.category_id
       JOIN books b ON b.id = bc2.book_id
@@ -229,7 +233,8 @@ app.get("/api/books/:slug/related", async (req, res) => {
         title,
         price_cents,
         currency,
-        cover_image_url
+        cover_image_url,
+        in_stock
       FROM books
       WHERE id <> $1
         AND is_active = true
@@ -340,6 +345,7 @@ app.post("/api/cart/:cartId/items", async (req, res) => {
       FROM books b
       WHERE b.id = $3
         AND b.is_active = true
+        AND b.in_stock = true
       ON CONFLICT (cart_id, book_id) DO UPDATE
       SET
         quantity = cart_items.quantity + EXCLUDED.quantity,
