@@ -5,11 +5,13 @@ import NavBar from "./components/NavBar";
 import CartDrawer from "./components/CartDrawer";
 import LandingPage from "./landing-page/LandingPage";
 import BookDetails from "./pages/BookDetails";
+import AboutPage from "./pages/AboutPage";
 import CartPage from "./pages/CartPage";
 import CheckoutPage from "./pages/CheckoutPage";
 import CheckoutSuccess from "./pages/CheckoutSuccess";
 import CheckoutCancel from "./pages/CheckoutCancel";
 import Footer from "./pages/Footer";
+import ContactPage from "./pages/ContactPage";
 import PrivacyPolicy from "./pages/Privacy/PrivacyPolicy";
 // import EventsList from "./components/EventList";
 // import SearchInput from "./components/SearchInput";
@@ -36,11 +38,13 @@ function App() {
       <ScrollToTop />
       <Routes>
         <Route path="/" element={<LandingPage />} />
+        <Route path="/about" element={<AboutPage />} />
         <Route path="/products/:slug" element={<BookDetails />} />
         <Route path="/cart" element={<CartPage />} />
         <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/checkout/success" element={<CheckoutSuccess />} />
         <Route path="/checkout/cancel" element={<CheckoutCancel />} />
+        <Route path="/contact" element={<ContactPage />} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="*" element={<LandingPage />} />
       </Routes>

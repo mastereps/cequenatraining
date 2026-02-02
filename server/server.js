@@ -3,6 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
+import nodemailer from "nodemailer";
 import { query, pool } from "./db.js"; // keep .js if db.js is still JS
 import paymentsRouter from "./routes/payments.js";
 import webhooksRouter from "./routes/webhooks.js";
@@ -34,12 +35,88 @@ const toRequiredPositiveInt = (value) => {
   return Number.isInteger(num) && num > 0 ? num : null;
 };
 
+const escapeHtml = (value) =>
+  String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+
+const contactRecipient = process.env.CONTACT_TO_EMAIL || "mbcequena@gmail.com";
+const smtpPort = Number(process.env.SMTP_PORT || 587);
+const smtpSecure = process.env.SMTP_SECURE === "true";
+const smtpUser = process.env.SMTP_USER;
+const smtpPass = process.env.SMTP_PASS;
+const smtpHost = process.env.SMTP_HOST;
+
+const emailTransporter =
+  smtpHost && smtpUser && smtpPass
+    ? nodemailer.createTransport({
+        host: smtpHost,
+        port: Number.isNaN(smtpPort) ? 587 : smtpPort,
+        secure: smtpSecure,
+        auth: {
+          user: smtpUser,
+          pass: smtpPass,
+        },
+      })
+    : null;
+
 app.get("/api/health", (_req, res) => {
   res.json({ status: "ok" });
 });
 
 app.use("/api/payments", paymentsRouter);
 app.use("/api/webhooks", webhooksRouter);
+
+app.post("/api/contact", async (req, res) => {
+  const email = String(req.body?.email || "").trim();
+  const message = String(req.body?.message || "").trim();
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  if (!email || !message) {
+    return res.status(400).json({ error: "Email and message are required." });
+  }
+
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ error: "Please enter a valid email." });
+  }
+
+  if (message.length > 5000) {
+    return res.status(400).json({ error: "Message is too long." });
+  }
+
+  if (!emailTransporter) {
+    return res.status(500).json({
+      error: "Email service is not configured on the server.",
+    });
+  }
+
+  const fromAddress = process.env.CONTACT_FROM_EMAIL || smtpUser;
+  const subject = `Website Contact Message from ${email}`;
+  const textBody = `From: ${email}\n\nMessage:\n${message}`;
+  const htmlBody = `
+    <p><strong>From:</strong> ${escapeHtml(email)}</p>
+    <p><strong>Message:</strong></p>
+    <pre style="white-space:pre-wrap;font-family:inherit;">${escapeHtml(message)}</pre>
+  `;
+
+  try {
+    await emailTransporter.sendMail({
+      from: fromAddress,
+      to: contactRecipient,
+      replyTo: email,
+      subject,
+      text: textBody,
+      html: htmlBody,
+    });
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error("Error sending contact email:", err);
+    return res.status(500).json({ error: "Failed to send email." });
+  }
+});
 
 // get ALL events (limit 4 for homepage, you can change/remove LIMIT)
 app.get("/api/events", async (req, res) => {

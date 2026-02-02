@@ -4,14 +4,14 @@ const About = () => {
   return (
     <section className="text-center mt-30">
       <header className="mb-11">
-        <p className=" headline-gradient text-lg font-text uppercase tracking-[0.05em] mb-4 font-bold">
+        <p className="headline-gradient text-lg font-text uppercase tracking-[0.05em] mb-4 font-bold">
           Hello,
         </p>
-        <h2 className="font-heading uppercase text-5xl">I'm Nery.</h2>
+        <h2 className="font-heading uppercase text-5xl">I&apos;m Nery.</h2>
       </header>
       <div>
         <p className="text-2xl max-w-[75ch] mx-auto mb-9">
-          I've spent 30+ years in teaching, research, and curriculum
+          I&apos;ve spent 30+ years in teaching, research, and curriculum
           development, and my mission is to help educators apply practical,
           research-backed approaches that improve literacy, strengthen ESL
           instruction, and support better learning outcomes.
@@ -20,7 +20,7 @@ const About = () => {
       <div className="img max-w-[725px] grid place-items-center mx-auto my-10 px-3 w-full">
         <img
           src={MariaPhoto}
-          alt="Maria Cequeña"
+          alt="Maria Cequena"
           className="h-fulls max-h-[366px] rounded-2xl"
         />
       </div>
