@@ -13,6 +13,7 @@ import CheckoutCancel from "./pages/CheckoutCancel";
 import Footer from "./pages/Footer";
 import ContactPage from "./pages/ContactPage";
 import PrivacyPolicy from "./pages/Privacy/PrivacyPolicy";
+import ProductsCollectionPage from "./pages/ProductsCollectionPage";
 // import EventsList from "./components/EventList";
 // import SearchInput from "./components/SearchInput";
 // import { useState } from "react";
@@ -39,6 +40,7 @@ function App() {
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/about" element={<AboutPage />} />
+        <Route path="/products" element={<ProductsCollectionPage />} />
         <Route path="/products/:slug" element={<BookDetails />} />
         <Route path="/cart" element={<CartPage />} />
         <Route path="/checkout" element={<CheckoutPage />} />

@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 const Credibility = () => {
   return (
     <section className="text-center mt-40">
@@ -26,15 +28,15 @@ const Credibility = () => {
           >
             Reserve Your Spot
           </a>
-          <a
-            href="#"
+          <Link
+            to="/products"
             className="inline-block mt-4 px-8 py-3 font-text font-bold uppercase tracking-[0.08em]
              bg-[#ef3f37] text-white rounded-sm transition-all duration-300
              hover:bg-[#f25751] hover:text-white hover:shadow-[0_10px_30px_rgba(239,63,55,0.35)]
              dark:hover:bg-white dark:hover:text-black dark:hover:shadow-[0_0_0_.2rem_#fff]"
           >
             Get Your Copy
-          </a>
+          </Link>
         </div>
       </div>
     </section>

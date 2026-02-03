@@ -6,34 +6,29 @@ import HeroBanner from "../assets/images/hero-webinar.jpg";
 
 const AboutPage = () => {
   return (
-    <section className="mt-24 bg-slate-100 pb-20 dark:bg-[#090c11]">
-      <div className="relative h-[350px] w-full overflow-hidden sm:h-[40vh] sm:min-h-[320px] sm:max-h-[420px]">
+    <section className="mt-24 bg-white pb-20 dark:bg-black">
+      <div className="relative h-[350px] w-full overflow-hidden border-b border-white/10 sm:h-[40vh] sm:min-h-[320px] sm:max-h-[420px]">
         <img
           src={HeroBanner}
           alt="Practical webinars hero"
-          className="h-full w-full object-cover"
+          className="h-full w-full object-cover object-bottom"
         />
-        <div className="absolute inset-0 bg-black/65" />
-        <div className="absolute inset-0 flex items-center justify-center px-6 text-center text-white">
-          <div>
-            <h1 className="font-heading text-4xl uppercase sm:text-6xl">
-              Practical Webinars
-            </h1>
-            <p className="mt-4 font-text text-sm uppercase tracking-[0.08em] sm:text-base">
-              Empowering teachers with practical and research-based learning
-            </p>
-          </div>
+        <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/40 to-black/55" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(227,179,35,0.2),transparent_45%)]" />
+        <div className="absolute inset-x-0 bottom-0 mx-auto w-full max-w-[1240px] px-4 pb-8 text-white">
+          <p className="mb-3 text-sm">
+            <Link to="/" className="text-white/70 transition hover:text-white">
+              Home
+            </Link>{" "}
+            / <span className="text-white">About</span>
+          </p>
+          <h1 className="font-heading text-4xl uppercase sm:text-6xl">
+            Practical Webinars
+          </h1>
+          <p className="mt-4 font-text text-sm uppercase tracking-[0.08em] sm:text-base">
+            Empowering teachers with practical and research-based learning
+          </p>
         </div>
-      </div>
-
-      <div className="mx-auto -mt-1 max-w-[1140px] py-6 text-left">
-        <p className="font-text text-xs uppercase tracking-[0.35em] text-slate-600 dark:text-slate-300">
-          <Link to="/" className="hover:text-slate-900 dark:hover:text-white">
-            Home
-          </Link>{" "}
-          <span className="mx-2">&raquo;</span>{" "}
-          <span className="text-slate-900 dark:text-white">About</span>
-        </p>
       </div>
 
       <div className="mx-auto mt-10 max-w-[1140px] overflow-hidden rounded-sm border border-slate-200 bg-white text-slate-900 dark:border-white/10 dark:bg-[#141619] dark:text-white">
@@ -45,10 +40,10 @@ const AboutPage = () => {
           />
           <div className="absolute inset-0 bg-black/45" />
           <div className="absolute bottom-8 left-8 right-8 text-center sm:left-16 sm:right-16">
-            <p className="mb-3 font-text text-xs uppercase tracking-[0.5em] text-slate-200">
+            <p className="mb-3 font-text text-xs uppercase tracking-[0.5em] text-white">
               Author
             </p>
-            <h1 className="font-heading text-4xl uppercase sm:text-6xl">
+            <h1 className="text-white font-heading text-4xl uppercase sm:text-6xl">
               Maria B. Cequena
             </h1>
           </div>

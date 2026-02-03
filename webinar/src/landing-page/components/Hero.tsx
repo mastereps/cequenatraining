@@ -67,7 +67,7 @@ const slides = [
     title: "Beyond the Page",
     subtitle: "Poems and books for more engaging teaching",
     cta: "Order Now",
-    href: "#",
+    href: "/products",
     image: HeroTwo,
   },
 ];

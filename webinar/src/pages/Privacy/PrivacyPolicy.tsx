@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import "./PrivacyPolicy.css";
 const PrivacyPolicy = () => {
   return (
@@ -91,7 +92,14 @@ const PrivacyPolicy = () => {
         <h2 className="text-xl mb-2">Contact us</h2>
         <p className="mb-10">
           If you have any questions about this Privacy Policy or our data
-          practices, please contact us at our support email.
+          practices, please contact us at our{" "}
+          <Link
+            to="/contact"
+            className="underline underline-offset-4 hover:text-lantern"
+          >
+            support email
+          </Link>
+          .
         </p>
       </div>
     </section>
