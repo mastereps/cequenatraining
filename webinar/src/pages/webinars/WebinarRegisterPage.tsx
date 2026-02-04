@@ -1,15 +1,26 @@
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
-import { Link, useParams } from "react-router-dom";
-import { fetchWebinarBySlug, registerWebinar } from "../../features/webinars/api";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import {
+  fetchRegistrationStatus,
+  fetchWebinarBySlug,
+  registerWebinar,
+} from "../../features/webinars/api";
+import {
+  clearSubmittedEmailForWebinar,
+  getSubmittedEmailForWebinar,
+  setSubmittedEmailForWebinar,
+} from "../../features/webinars/registrationSession";
 import type { Webinar } from "../../features/webinars/types";
+import { useAuth } from "../../store/AuthContext";
 
 const WebinarRegisterPage = () => {
   const { slug = "" } = useParams();
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [webinar, setWebinar] = useState<Webinar | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -17,10 +28,54 @@ const WebinarRegisterPage = () => {
   const [role, setRole] = useState("");
 
   useEffect(() => {
+    if (!user) return;
+    setFullName((prev) => prev || user.name || "");
+    setEmail((prev) => prev || user.email || "");
+  }, [user]);
+
+  useEffect(() => {
     let active = true;
     const load = async () => {
       setLoading(true);
       setError(null);
+
+      if (user) {
+        try {
+          const status = await fetchRegistrationStatus(slug, {
+            userId: user.id,
+            email: user.email,
+          });
+          if (status.registered) {
+            const targetEmail = status.email || user.email;
+            setSubmittedEmailForWebinar(slug, targetEmail);
+            navigate(`/webinars/${slug}/submitted?email=${encodeURIComponent(targetEmail)}`, {
+              replace: true,
+            });
+            return;
+          }
+        } catch {
+          // Continue with normal registration load.
+        }
+      }
+
+      const submittedEmail = getSubmittedEmailForWebinar(slug);
+      if (submittedEmail) {
+        try {
+          const status = await fetchRegistrationStatus(slug, { email: submittedEmail });
+          if (status.registered) {
+            navigate(`/webinars/${slug}/submitted?email=${encodeURIComponent(submittedEmail)}`, {
+              replace: true,
+            });
+            return;
+          }
+
+          clearSubmittedEmailForWebinar(slug);
+        } catch {
+          // If status check fails, keep the UI unlocked so user can still register.
+          clearSubmittedEmailForWebinar(slug);
+        }
+      }
+
       try {
         const response = await fetchWebinarBySlug(slug);
         if (active) setWebinar(response);
@@ -37,24 +92,29 @@ const WebinarRegisterPage = () => {
     return () => {
       active = false;
     };
-  }, [slug]);
+  }, [navigate, slug, user]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (submitting) return;
+
     setSubmitting(true);
     setError(null);
-    setSuccessMessage(null);
 
     try {
       const response = await registerWebinar(slug, {
         full_name: fullName,
         email,
+        user_id: user?.id,
         optional_fields: {
           organization,
           role,
         },
       });
-      setSuccessMessage(response.message);
+      setSubmittedEmailForWebinar(slug, response.email);
+      navigate(`/webinars/${slug}/submitted?email=${encodeURIComponent(response.email)}`, {
+        replace: true,
+      });
     } catch (submitError) {
       const message =
         submitError instanceof Error ? submitError.message : "Unable to register.";
@@ -112,9 +172,15 @@ const WebinarRegisterPage = () => {
             required
             value={email}
             onChange={(event) => setEmail(event.target.value)}
+            disabled={Boolean(user)}
             className="w-full rounded border border-slate-300 px-3 py-2 dark:border-slate-600 dark:bg-slate-800"
             placeholder="you@example.com"
           />
+          {user ? (
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-300">
+              Using your account email.
+            </p>
+          ) : null}
         </div>
         <div>
           <label htmlFor="organization" className="mb-1 block text-sm font-semibold">
@@ -140,7 +206,6 @@ const WebinarRegisterPage = () => {
         </div>
 
         {error ? <p className="text-sm text-red-600">{error}</p> : null}
-        {successMessage ? <p className="text-sm text-green-700">{successMessage}</p> : null}
 
         <button
           type="submit"

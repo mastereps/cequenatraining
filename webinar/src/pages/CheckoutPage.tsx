@@ -1,9 +1,12 @@
+import { Link } from "react-router-dom";
 import { useState } from "react";
 import { useCart } from "../store/CartContext";
+import { useAuth } from "../store/AuthContext";
 import { formatPrice } from "../utils/formatPrice";
 
 const CheckoutPage = () => {
   const { items, subtotalCents } = useCart();
+  const { user } = useAuth();
   const currency = items[0]?.currency || "PHP";
   const [paying, setPaying] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
@@ -41,25 +44,43 @@ const CheckoutPage = () => {
       <div className="grid gap-10 lg:grid-cols-[1.2fr_0.8fr]">
         <div className="rounded border border-slate-200 bg-white p-6 text-slate-900 dark:border-white/10 dark:bg-[#0f0f0f] dark:text-white">
           <h2 className="text-lg font-semibold uppercase mb-4">Contact</h2>
-          <p className="text-sm text-slate-500 dark:text-white/60">
-            Checkout form coming soon. This page is wired for routing now.
-          </p>
-          <div className="mt-6">
-            <h3 className="text-xs uppercase tracking-[0.2em] text-slate-500 dark:text-white/60">
-              Payment
-            </h3>
-            <button
-              type="button"
-              onClick={handleGcashPayment}
-              disabled={paying || items.length === 0}
-              className="mt-4 w-full rounded bg-[#00a34a] px-4 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {paying ? "Redirecting..." : "Pay with GCash"}
-            </button>
-            {paymentError && (
-              <p className="mt-3 text-xs text-red-400">{paymentError}</p>
-            )}
-          </div>
+          {!user ? (
+            <div className="rounded border border-amber-200 bg-amber-50 p-4 text-amber-900">
+              <p className="text-sm">
+                Please log in or create an account before completing checkout.
+              </p>
+              <div className="mt-4">
+                <Link
+                  to="/login?next=/checkout"
+                  className="inline-block rounded bg-amber-600 px-5 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-amber-700"
+                >
+                  Login or register
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <>
+              <p className="text-sm text-slate-500 dark:text-white/60">
+                Signed in as <strong>{user.email}</strong>
+              </p>
+              <div className="mt-6">
+                <h3 className="text-xs uppercase tracking-[0.2em] text-slate-500 dark:text-white/60">
+                  Payment
+                </h3>
+                <button
+                  type="button"
+                  onClick={handleGcashPayment}
+                  disabled={paying || items.length === 0}
+                  className="mt-4 w-full rounded bg-[#00a34a] px-4 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {paying ? "Redirecting..." : "Pay with GCash"}
+                </button>
+                {paymentError && (
+                  <p className="mt-3 text-xs text-red-400">{paymentError}</p>
+                )}
+              </div>
+            </>
+          )}
         </div>
         <div className="rounded border border-slate-200 bg-white p-6 text-slate-900 dark:border-white/10 dark:bg-[#0f0f0f] dark:text-white">
           <h2 className="text-lg font-semibold uppercase mb-4">

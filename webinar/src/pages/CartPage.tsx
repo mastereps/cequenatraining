@@ -1,12 +1,15 @@
 import { Link } from "react-router-dom";
 import { useCart } from "../store/CartContext";
+import { useAuth } from "../store/AuthContext";
 import { formatPrice } from "../utils/formatPrice";
 
 const clampQuantity = (value: number) => Math.min(99, Math.max(1, value));
 
 const CartPage = () => {
   const { items, subtotalCents, updateItemQuantity, removeItem } = useCart();
+  const { user } = useAuth();
   const currency = items[0]?.currency || "PHP";
+  const checkoutHref = user ? "/checkout" : "/login?next=/checkout";
 
   return (
     <section className="max-w-[1240px] mx-auto px-4 pt-32 pb-20 text-slate-900 dark:text-white">
@@ -109,10 +112,10 @@ const CartPage = () => {
               Taxes and shipping calculated at checkout.
             </p>
             <Link
-              to="/checkout"
+              to={checkoutHref}
               className="mt-6 block rounded bg-[#e3b323] py-3 text-center text-sm font-semibold uppercase tracking-[0.2em] text-black hover:brightness-110"
             >
-              Checkout
+              {user ? "Checkout" : "Login to checkout"}
             </Link>
           </div>
         </div>

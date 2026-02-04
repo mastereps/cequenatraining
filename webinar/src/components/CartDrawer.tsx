@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { useCart } from "../store/CartContext";
+import { useAuth } from "../store/AuthContext";
 import { formatPrice } from "../utils/formatPrice";
 
 const clampQuantity = (value: number) => Math.min(99, Math.max(1, value));
@@ -14,8 +15,10 @@ const CartDrawer = () => {
     updateItemQuantity,
     removeItem,
   } = useCart();
+  const { user } = useAuth();
 
   const currency = items[0]?.currency || "PHP";
+  const checkoutHref = user ? "/checkout" : "/login?next=/checkout";
 
   return (
     <div
@@ -138,11 +141,11 @@ const CartDrawer = () => {
           </div>
           <div className="mt-4 flex flex-col gap-3">
             <Link
-              to="/checkout"
+              to={checkoutHref}
               onClick={closeCart}
               className="rounded bg-[#e3b323] py-3 text-center text-sm font-semibold uppercase tracking-[0.2em] text-black hover:brightness-110"
             >
-              Checkout
+              {user ? "Checkout" : "Login to checkout"}
             </Link>
             <Link
               to="/cart"

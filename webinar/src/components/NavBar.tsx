@@ -7,6 +7,7 @@ import {
 } from "react-icons/ai";
 import CompanyLogo from "../assets/images/cequena_training.png";
 import { useCart } from "../store/CartContext";
+import { useAuth } from "../store/AuthContext";
 const NavBar = () => {
   const links = [
     { label: "Home", href: "/" },
@@ -21,6 +22,7 @@ const NavBar = () => {
     return localStorage.getItem("theme") === "dark";
   });
   const { items, openCart } = useCart();
+  const { user, logout } = useAuth();
   const cartCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
   useEffect(() => {
@@ -90,6 +92,24 @@ const NavBar = () => {
                   {isDark ? "Dark mode" : "Light mode"}
                 </span>
               </label>
+            </li>
+            <li className="flex items-center p-4 text-slate-900 dark:text-slate-100">
+              {user ? (
+                <button
+                  type="button"
+                  onClick={logout}
+                  className="text-sm font-semibold uppercase tracking-[0.08em] hover:opacity-80"
+                >
+                  Logout
+                </button>
+              ) : (
+                <Link
+                  to="/login?next=/checkout"
+                  className="text-sm font-semibold uppercase tracking-[0.08em] hover:opacity-80"
+                >
+                  Login
+                </Link>
+              )}
             </li>
             <li className="flex items-center p-4 text-slate-900 dark:text-slate-100">
               <button

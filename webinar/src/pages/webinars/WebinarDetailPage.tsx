@@ -1,12 +1,20 @@
 import { Link, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { fetchWebinarBySlug } from "../../features/webinars/api";
+import { fetchRegistrationStatus, fetchWebinarBySlug } from "../../features/webinars/api";
+import {
+  clearSubmittedEmailForWebinar,
+  getSubmittedEmailForWebinar,
+  setSubmittedEmailForWebinar,
+} from "../../features/webinars/registrationSession";
 import type { Webinar } from "../../features/webinars/types";
 import { formatManilaDateTime, formatSeatLabel } from "../../features/webinars/format";
+import { useAuth } from "../../store/AuthContext";
 
 const WebinarDetailPage = () => {
   const { slug = "" } = useParams();
+  const { user } = useAuth();
   const [webinar, setWebinar] = useState<Webinar | null>(null);
+  const [alreadySubmitted, setAlreadySubmitted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -32,6 +40,54 @@ const WebinarDetailPage = () => {
       active = false;
     };
   }, [slug]);
+
+  useEffect(() => {
+    if (!webinar) return;
+
+    let active = true;
+    const syncSubmittedState = async () => {
+      if (user) {
+        try {
+          const status = await fetchRegistrationStatus(webinar.slug, {
+            userId: user.id,
+            email: user.email,
+          });
+          if (status.registered) {
+            setSubmittedEmailForWebinar(webinar.slug, status.email || user.email);
+          } else {
+            clearSubmittedEmailForWebinar(webinar.slug);
+          }
+          if (active) setAlreadySubmitted(status.registered);
+          return;
+        } catch {
+          if (active) setAlreadySubmitted(false);
+          return;
+        }
+      }
+
+      const submittedEmail = getSubmittedEmailForWebinar(webinar.slug);
+      if (!submittedEmail) {
+        if (active) setAlreadySubmitted(false);
+        return;
+      }
+
+      try {
+        const status = await fetchRegistrationStatus(webinar.slug, { email: submittedEmail });
+        if (!status.registered) {
+          clearSubmittedEmailForWebinar(webinar.slug);
+        }
+        if (active) setAlreadySubmitted(status.registered);
+      } catch {
+        clearSubmittedEmailForWebinar(webinar.slug);
+        if (active) setAlreadySubmitted(false);
+      }
+    };
+
+    void syncSubmittedState();
+    return () => {
+      active = false;
+    };
+  }, [user, webinar]);
 
   if (loading) {
     return <main className="mx-auto mt-28 max-w-[900px] px-4">Loading webinar...</main>;
@@ -71,12 +127,21 @@ const WebinarDetailPage = () => {
       </div>
 
       <div className="mt-8 flex flex-wrap gap-4">
-        <Link
-          to={`/webinars/${webinar.slug}/register`}
-          className="rounded bg-lantern px-6 py-3 font-text text-sm font-bold uppercase tracking-[0.08em] text-white transition hover:bg-lantern/90"
-        >
-          Reserve my spot
-        </Link>
+        {alreadySubmitted ? (
+          <span
+            aria-disabled="true"
+            className="cursor-not-allowed rounded bg-emerald-700 px-6 py-3 font-text text-sm font-bold uppercase tracking-[0.08em] text-white opacity-80"
+          >
+            Already registered
+          </span>
+        ) : (
+          <Link
+            to={`/webinars/${webinar.slug}/register`}
+            className="rounded bg-lantern px-6 py-3 font-text text-sm font-bold uppercase tracking-[0.08em] text-white transition hover:bg-lantern/90"
+          >
+            Reserve my spot
+          </Link>
+        )}
         <Link
           to="/webinars"
           className="rounded border border-slate-300 px-6 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"

@@ -39,22 +39,20 @@ const STORAGE_KEY = "cart_items";
 const clampQuantity = (value: number) => Math.min(99, Math.max(1, value));
 
 export const CartProvider = ({ children }: { children: React.ReactNode }) => {
-  const [items, setItems] = useState<CartItem[]>([]);
+  const [items, setItems] = useState<CartItem[]>(() => {
+    if (typeof window === "undefined") return [];
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (!stored) return [];
+    try {
+      return JSON.parse(stored) as CartItem[];
+    } catch {
+      localStorage.removeItem(STORAGE_KEY);
+      return [];
+    }
+  });
   const [notice, setNotice] = useState<string | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const noticeTimer = useRef<number | null>(null);
-
-  useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored) as CartItem[];
-        setItems(parsed);
-      } catch {
-        localStorage.removeItem(STORAGE_KEY);
-      }
-    }
-  }, []);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(items));

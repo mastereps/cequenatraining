@@ -1,4 +1,5 @@
 import {
+  getRegistrationStatusForWebinar,
   getWebinarBySlug,
   listWebinars,
   registerForWebinar,
@@ -60,12 +61,30 @@ export const getWebinarBySlugController = async (req, res) => {
   }
 };
 
+export const getRegistrationStatusController = async (req, res) => {
+  try {
+    const result = await getRegistrationStatusForWebinar({
+      slug: req.params.slug,
+      email: req.query.email,
+      userId: req.query.user_id,
+    });
+
+    return res.json({
+      ok: true,
+      ...result,
+    });
+  } catch (error) {
+    return handleError(res, error, "get_registration_status");
+  }
+};
+
 export const registerForWebinarController = async (req, res) => {
   try {
     const result = await registerForWebinar({
       slug: req.params.slug,
       fullName: req.body?.full_name,
       email: req.body?.email,
+      userId: req.body?.user_id,
       optionalFields: req.body?.optional_fields,
     });
 

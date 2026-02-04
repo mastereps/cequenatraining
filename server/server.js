@@ -8,6 +8,7 @@ import { query, pool } from "./db.js"; // keep .js if db.js is still JS
 import paymentsRouter from "./routes/payments.js";
 import webhooksRouter from "./routes/webhooks.js";
 import webinarsRouter from "./routes/webinars.js";
+import authRouter from "./routes/auth.js";
 import { logger } from "./utils/logger.js";
 import { startEmailOutboxWorker } from "./workers/emailOutboxWorker.js";
 
@@ -87,6 +88,7 @@ app.get("/api/health", (_req, res) => {
 app.use("/api/payments", paymentsRouter);
 app.use("/api/webhooks", webhooksRouter);
 app.use("/api", webinarsRouter);
+app.use("/api/auth", authRouter);
 
 app.post("/api/contact", async (req, res) => {
   const email = String(req.body?.email || "").trim();

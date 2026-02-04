@@ -1,4 +1,5 @@
 import type {
+  RegistrationStatusResponse,
   ResendConfirmationResponse,
   VerifyResponse,
   Webinar,
@@ -108,4 +109,23 @@ export const resendConfirmationEmail = async (
   }
 
   return (await res.json()) as ResendConfirmationResponse;
+};
+
+export const fetchRegistrationStatus = async (
+  slug: string,
+  options: { email?: string; userId?: number | null },
+): Promise<RegistrationStatusResponse> => {
+  const params = new URLSearchParams();
+  if (options.email) params.set("email", options.email);
+  if (options.userId && Number.isInteger(options.userId)) {
+    params.set("user_id", String(options.userId));
+  }
+  const res = await fetch(
+    `/api/webinars/${encodeURIComponent(slug)}/registration-status?${params.toString()}`,
+  );
+  if (!res.ok) {
+    throw new Error(await getErrorMessage(res));
+  }
+
+  return (await res.json()) as RegistrationStatusResponse;
 };

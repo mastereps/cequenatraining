@@ -1,5 +1,6 @@
 import express from "express";
 import {
+  getRegistrationStatusController,
   getWebinarBySlugController,
   listWebinarsController,
   registerForWebinarController,
@@ -11,6 +12,7 @@ const router = express.Router();
 
 router.get("/webinars", listWebinarsController);
 router.get("/webinars/:slug", getWebinarBySlugController);
+router.get("/webinars/:slug/registration-status", getRegistrationStatusController);
 router.post("/webinars/:slug/register", registerForWebinarController);
 router.get("/verify", verifyRegistrationController);
 router.post("/webinars/:slug/resend-confirmation", resendConfirmationController);

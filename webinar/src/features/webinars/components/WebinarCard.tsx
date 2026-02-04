@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { hasSubmittedWebinarRegistration } from "../registrationSession";
 import type { Webinar } from "../types";
 import { formatManilaDateTime, formatSeatLabel } from "../format";
 
@@ -7,6 +8,8 @@ interface WebinarCardProps {
 }
 
 const WebinarCard = ({ webinar }: WebinarCardProps) => {
+  const alreadySubmitted = hasSubmittedWebinarRegistration(webinar.slug);
+
   return (
     <article className="h-full rounded-lg border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
       <div className="p-6">
@@ -28,12 +31,21 @@ const WebinarCard = ({ webinar }: WebinarCardProps) => {
         </div>
 
         <div className="mt-6">
-          <Link
-            to={`/webinars/${webinar.slug}`}
-            className="inline-block rounded bg-lantern px-5 py-3 font-text text-sm font-bold uppercase tracking-[0.08em] text-white transition hover:bg-lantern/90"
-          >
-            Reserve my spot
-          </Link>
+          {alreadySubmitted ? (
+            <span
+              aria-disabled="true"
+              className="inline-block cursor-not-allowed rounded bg-emerald-700 px-5 py-3 font-text text-sm font-bold uppercase tracking-[0.08em] text-white opacity-80"
+            >
+              Already registered
+            </span>
+          ) : (
+            <Link
+              to={`/webinars/${webinar.slug}`}
+              className="inline-block rounded bg-lantern px-5 py-3 font-text text-sm font-bold uppercase tracking-[0.08em] text-white transition hover:bg-lantern/90"
+            >
+              Reserve my spot
+            </Link>
+          )}
         </div>
       </div>
     </article>

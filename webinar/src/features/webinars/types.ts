@@ -27,6 +27,7 @@ export interface WebinarSingleResponse {
 export interface WebinarRegisterPayload {
   full_name: string;
   email: string;
+  user_id?: number;
   optional_fields?: Record<string, string>;
 }
 
@@ -53,4 +54,13 @@ export interface ResendConfirmationResponse {
   webinar_slug: string;
   email: string;
   message: string;
+}
+
+export interface RegistrationStatusResponse {
+  ok: boolean;
+  webinar_slug: string;
+  email: string | null;
+  user_id: number | null;
+  registered: boolean;
+  status: "pending" | "verified" | "cancelled" | null;
 }

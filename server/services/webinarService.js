@@ -137,14 +137,64 @@ export const getWebinarBySlug = async (slug) => {
   return mapWebinar(result.rows[0]);
 };
 
-export const registerForWebinar = async ({ slug, fullName, email, optionalFields }) => {
-  const cleanName = sanitizeText(fullName, 180);
-  const cleanEmail = normalizeEmail(email);
-  const safeOptionalFields = parseOptionalFields(optionalFields);
+export const getRegistrationStatusForWebinar = async ({ slug, email, userId }) => {
+  const cleanSlug = sanitizeText(slug, 150);
+  const rawUserId = Number(userId);
+  const cleanUserId = Number.isInteger(rawUserId) && rawUserId > 0 ? rawUserId : null;
+  const cleanEmail = email ? normalizeEmail(email) : "";
 
-  if (cleanName.length < 2) {
-    throw new AppError(400, "Full name is required.");
+  if (!cleanUserId && !cleanEmail) {
+    throw new AppError(400, "Either user_id or email is required.");
   }
+  if (cleanEmail && !isValidEmail(cleanEmail)) {
+    throw new AppError(400, "A valid email is required.");
+  }
+
+  let result;
+  if (cleanUserId) {
+    result = await pool.query(
+      `
+        SELECT wr.status
+        FROM webinar_registrations wr
+        JOIN webinars w ON w.id = wr.webinar_id
+        WHERE w.slug = $1
+          AND w.is_published = true
+          AND wr.user_id = $2
+        LIMIT 1
+      `,
+      [cleanSlug, cleanUserId],
+    );
+  } else {
+    result = await pool.query(
+      `
+        SELECT wr.status
+        FROM webinar_registrations wr
+        JOIN webinars w ON w.id = wr.webinar_id
+        WHERE w.slug = $1
+          AND w.is_published = true
+          AND wr.email = $2
+        LIMIT 1
+      `,
+      [cleanSlug, cleanEmail],
+    );
+  }
+
+  const status = result.rows[0]?.status || null;
+  return {
+    webinar_slug: cleanSlug,
+    email: cleanEmail || null,
+    user_id: cleanUserId,
+    registered: status === "pending" || status === "verified",
+    status,
+  };
+};
+
+export const registerForWebinar = async ({ slug, fullName, email, userId, optionalFields }) => {
+  let cleanName = sanitizeText(fullName, 180);
+  let cleanEmail = normalizeEmail(email);
+  const rawUserId = Number(userId);
+  const cleanUserId = Number.isInteger(rawUserId) && rawUserId > 0 ? rawUserId : null;
+  const safeOptionalFields = parseOptionalFields(optionalFields);
 
   if (!isValidEmail(cleanEmail)) {
     throw new AppError(400, "A valid email is required.");
@@ -154,6 +204,39 @@ export const registerForWebinar = async ({ slug, fullName, email, optionalFields
 
   try {
     await client.query("BEGIN");
+
+    if (cleanUserId) {
+      const userResult = await client.query(
+        `
+          SELECT id, name, email
+          FROM users
+          WHERE id = $1
+          LIMIT 1
+        `,
+        [cleanUserId],
+      );
+
+      if (userResult.rows.length === 0) {
+        throw new AppError(400, "Invalid user id.");
+      }
+
+      const user = userResult.rows[0];
+      const accountEmail = normalizeEmail(user.email);
+      if (!accountEmail || !isValidEmail(accountEmail)) {
+        throw new AppError(409, "Your account must have a valid email before registering.");
+      }
+      if (accountEmail !== cleanEmail) {
+        throw new AppError(409, "Please use your account email for webinar registration.");
+      }
+      cleanEmail = accountEmail;
+      if (cleanName.length < 2) {
+        cleanName = sanitizeText(user.name, 180);
+      }
+    }
+
+    if (cleanName.length < 2) {
+      throw new AppError(400, "Full name is required.");
+    }
 
     const webinarResult = await client.query(
       `
@@ -196,17 +279,29 @@ export const registerForWebinar = async ({ slug, fullName, email, optionalFields
       throw new AppError(429, "Too many registration attempts. Please retry later.");
     }
 
-    const existingRegistration = await client.query(
-      `
-        SELECT id, status
-        FROM webinar_registrations
-        WHERE webinar_id = $1
-          AND email = $2
-        LIMIT 1
-        FOR UPDATE
-      `,
-      [webinar.id, cleanEmail],
-    );
+    const existingRegistration = cleanUserId
+      ? await client.query(
+          `
+            SELECT id, status
+            FROM webinar_registrations
+            WHERE webinar_id = $1
+              AND (email = $2 OR user_id = $3)
+            LIMIT 1
+            FOR UPDATE
+          `,
+          [webinar.id, cleanEmail, cleanUserId],
+        )
+      : await client.query(
+          `
+            SELECT id, status
+            FROM webinar_registrations
+            WHERE webinar_id = $1
+              AND email = $2
+            LIMIT 1
+            FOR UPDATE
+          `,
+          [webinar.id, cleanEmail],
+        );
 
     if (existingRegistration.rows[0]?.status === "verified") {
       throw new AppError(409, "This email is already verified for this webinar.");
@@ -228,6 +323,7 @@ export const registerForWebinar = async ({ slug, fullName, email, optionalFields
             verify_token_expires_at = $4::timestamptz,
             verified_at = NULL,
             optional_fields_json = $5::jsonb,
+            user_id = COALESCE($6, user_id),
             last_verification_email_sent_at = NOW()
           WHERE id = $1
         `,
@@ -237,6 +333,7 @@ export const registerForWebinar = async ({ slug, fullName, email, optionalFields
           tokenHash,
           tokenExpiry,
           JSON.stringify(safeOptionalFields),
+          cleanUserId,
         ],
       );
     } else {
@@ -246,19 +343,21 @@ export const registerForWebinar = async ({ slug, fullName, email, optionalFields
             webinar_id,
             email,
             full_name,
+            user_id,
             status,
             verify_token_hash,
             verify_token_expires_at,
             optional_fields_json,
             last_verification_email_sent_at
           )
-          VALUES ($1, $2, $3, 'pending', $4, $5::timestamptz, $6::jsonb, NOW())
+          VALUES ($1, $2, $3, $4, 'pending', $5, $6::timestamptz, $7::jsonb, NOW())
           RETURNING id
         `,
         [
           webinar.id,
           cleanEmail,
           cleanName,
+          cleanUserId,
           tokenHash,
           tokenExpiry,
           JSON.stringify(safeOptionalFields),

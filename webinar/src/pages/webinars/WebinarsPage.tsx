@@ -1,8 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
-import { fetchWebinars } from "../../features/webinars/api";
+import { fetchRegistrationStatus, fetchWebinars } from "../../features/webinars/api";
+import {
+  clearSubmittedEmailForWebinar,
+  getSubmittedEmailForWebinar,
+  setSubmittedEmailForWebinar,
+} from "../../features/webinars/registrationSession";
 import type { Webinar } from "../../features/webinars/types";
 import WebinarCard from "../../features/webinars/components/WebinarCard";
+import { useAuth } from "../../store/AuthContext";
 
 const TOPIC_OPTIONS = [
   "Research & Publication",
@@ -12,6 +18,7 @@ const TOPIC_OPTIONS = [
 ];
 
 const WebinarsPage = () => {
+  const { user } = useAuth();
   const [search, setSearch] = useState("");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
@@ -20,6 +27,41 @@ const WebinarsPage = () => {
   const [webinars, setWebinars] = useState<Webinar[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const syncSubmittedLocks = async (data: Webinar[]) => {
+    await Promise.all(
+      data.map(async (webinar) => {
+        if (user) {
+          try {
+            const status = await fetchRegistrationStatus(webinar.slug, {
+              userId: user.id,
+              email: user.email,
+            });
+            if (status.registered) {
+              setSubmittedEmailForWebinar(webinar.slug, status.email || user.email);
+            } else {
+              clearSubmittedEmailForWebinar(webinar.slug);
+            }
+            return;
+          } catch {
+            // Fallback to session lock check below.
+          }
+        }
+
+        const submittedEmail = getSubmittedEmailForWebinar(webinar.slug);
+        if (!submittedEmail) return;
+
+        try {
+          const status = await fetchRegistrationStatus(webinar.slug, { email: submittedEmail });
+          if (!status.registered) {
+            clearSubmittedEmailForWebinar(webinar.slug);
+          }
+        } catch {
+          clearSubmittedEmailForWebinar(webinar.slug);
+        }
+      }),
+    );
+  };
 
   const loadWebinars = async () => {
     setLoading(true);
@@ -32,6 +74,7 @@ const WebinarsPage = () => {
         topic,
         availability,
       });
+      await syncSubmittedLocks(data);
       setWebinars(data);
     } catch (loadError) {
       const message =
@@ -45,7 +88,7 @@ const WebinarsPage = () => {
   useEffect(() => {
     void loadWebinars();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [user]);
 
   const handleFilterSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
