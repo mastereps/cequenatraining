@@ -6,7 +6,7 @@ import { useAuth } from "../store/AuthContext";
 type AuthMode = "login" | "register";
 
 const LoginPage = () => {
-  const { login, register, user } = useAuth();
+  const { login, register, user, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [mode, setMode] = useState<AuthMode>("login");
@@ -19,14 +19,19 @@ const LoginPage = () => {
   const nextPath = useMemo(() => {
     const query = new URLSearchParams(location.search);
     const next = query.get("next");
-    return next && next.startsWith("/") ? next : "/checkout";
+    return next && next.startsWith("/") && !next.startsWith("//") ? next : "/";
   }, [location.search]);
+  const checkoutFlow = nextPath === "/checkout";
 
   useEffect(() => {
-    if (user) {
+    if (!loading && user) {
       navigate(nextPath, { replace: true });
     }
-  }, [navigate, nextPath, user]);
+  }, [loading, navigate, nextPath, user]);
+
+  if (loading) {
+    return <main className="mx-auto mt-28 max-w-[520px] px-4 pb-20">Checking session...</main>;
+  }
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -54,7 +59,9 @@ const LoginPage = () => {
     <main className="mx-auto mt-28 max-w-[520px] px-4 pb-20">
       <h1 className="font-heading text-5xl uppercase">Account access</h1>
       <p className="mt-3 text-slate-700 dark:text-slate-200">
-        Please log in or create an account before checkout.
+        {checkoutFlow
+          ? "Please log in or create an account before checkout."
+          : "Please log in or create an account to continue."}
       </p>
 
       <div className="mt-8 overflow-hidden rounded-lg border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
@@ -144,8 +151,8 @@ const LoginPage = () => {
       </div>
 
       <div className="mt-4">
-        <Link to="/cart" className="text-sm font-semibold underline">
-          Back to cart
+        <Link to={checkoutFlow ? "/cart" : "/"} className="text-sm font-semibold underline">
+          {checkoutFlow ? "Back to cart" : "Back to home"}
         </Link>
       </div>
     </main>

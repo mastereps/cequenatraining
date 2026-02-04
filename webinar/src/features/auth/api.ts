@@ -16,6 +16,7 @@ export const registerAuthUser = async (
 ): Promise<AuthResponse> => {
   const res = await fetch("/api/auth/register", {
     method: "POST",
+    credentials: "include",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ name, email, password }),
   });
@@ -28,6 +29,7 @@ export const registerAuthUser = async (
 export const loginAuthUser = async (email: string, password: string): Promise<AuthResponse> => {
   const res = await fetch("/api/auth/login", {
     method: "POST",
+    credentials: "include",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
   });
@@ -35,4 +37,24 @@ export const loginAuthUser = async (email: string, password: string): Promise<Au
     throw new Error(await getErrorMessage(res));
   }
   return (await res.json()) as AuthResponse;
+};
+
+export const fetchAuthSessionUser = async (): Promise<AuthResponse> => {
+  const res = await fetch("/api/auth/me", {
+    credentials: "include",
+  });
+  if (!res.ok) {
+    throw new Error(await getErrorMessage(res));
+  }
+  return (await res.json()) as AuthResponse;
+};
+
+export const logoutAuthUser = async (): Promise<void> => {
+  const res = await fetch("/api/auth/logout", {
+    method: "POST",
+    credentials: "include",
+  });
+  if (!res.ok) {
+    throw new Error(await getErrorMessage(res));
+  }
 };

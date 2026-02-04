@@ -18,6 +18,7 @@ const CheckoutPage = () => {
     try {
       const res = await fetch("/api/payments/gcash", {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ items }),
       });

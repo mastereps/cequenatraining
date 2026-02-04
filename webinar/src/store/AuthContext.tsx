@@ -1,5 +1,10 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { loginAuthUser, registerAuthUser } from "../features/auth/api";
+import {
+  fetchAuthSessionUser,
+  loginAuthUser,
+  logoutAuthUser,
+  registerAuthUser,
+} from "../features/auth/api";
 import type { AuthUser } from "../features/auth/types";
 
 interface AuthContextValue {
@@ -10,7 +15,6 @@ interface AuthContextValue {
   logout: () => void;
 }
 
-const AUTH_STORAGE_KEY = "auth_user";
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
@@ -18,39 +22,53 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const stored = localStorage.getItem(AUTH_STORAGE_KEY);
-    if (stored) {
+    let active = true;
+    const syncAuthSession = async () => {
       try {
-        setUser(JSON.parse(stored) as AuthUser);
+        const response = await fetchAuthSessionUser();
+        if (active) {
+          setUser(response.user);
+        }
       } catch {
-        localStorage.removeItem(AUTH_STORAGE_KEY);
+        if (active) {
+          setUser(null);
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
       }
-    }
-    setLoading(false);
+    };
+
+    void syncAuthSession();
+    return () => {
+      active = false;
+    };
   }, []);
 
   const persistUser = (nextUser: AuthUser | null) => {
     setUser(nextUser);
-    if (nextUser) {
-      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(nextUser));
-    } else {
-      localStorage.removeItem(AUTH_STORAGE_KEY);
-    }
   };
 
   const login = async (email: string, password: string) => {
     const response = await loginAuthUser(email, password);
+    setLoading(false);
     persistUser(response.user);
     return response.user;
   };
 
   const register = async (name: string, email: string, password: string) => {
     const response = await registerAuthUser(name, email, password);
+    setLoading(false);
     persistUser(response.user);
     return response.user;
   };
 
-  const logout = () => persistUser(null);
+  const logout = () => {
+    setLoading(false);
+    persistUser(null);
+    void logoutAuthUser();
+  };
 
   const value = useMemo(
     () => ({

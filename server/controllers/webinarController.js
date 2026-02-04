@@ -32,6 +32,11 @@ const handleError = (res, error, context) => {
   return res.status(500).json({ error: "Internal server error." });
 };
 
+const parseRequestedUserId = (value) => {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+};
+
 export const listWebinarsController = async (req, res) => {
   try {
     const webinars = await listWebinars({
@@ -63,10 +68,18 @@ export const getWebinarBySlugController = async (req, res) => {
 
 export const getRegistrationStatusController = async (req, res) => {
   try {
+    const requestedUserId = parseRequestedUserId(req.query.user_id);
+    if (requestedUserId && (!req.authUser || req.authUser.id !== requestedUserId)) {
+      return res.status(403).json({
+        error: "You are not allowed to query another user's registration status.",
+      });
+    }
+
+    const effectiveUserId = req.authUser?.id || requestedUserId;
     const result = await getRegistrationStatusForWebinar({
       slug: req.params.slug,
       email: req.query.email,
-      userId: req.query.user_id,
+      userId: effectiveUserId,
     });
 
     return res.json({
@@ -80,11 +93,19 @@ export const getRegistrationStatusController = async (req, res) => {
 
 export const registerForWebinarController = async (req, res) => {
   try {
+    const requestedUserId = parseRequestedUserId(req.body?.user_id);
+    if (requestedUserId && (!req.authUser || req.authUser.id !== requestedUserId)) {
+      return res.status(403).json({
+        error: "You are not allowed to submit registrations for another user.",
+      });
+    }
+
+    const effectiveUserId = req.authUser?.id || requestedUserId;
     const result = await registerForWebinar({
       slug: req.params.slug,
       fullName: req.body?.full_name,
       email: req.body?.email,
-      userId: req.body?.user_id,
+      userId: effectiveUserId,
       optionalFields: req.body?.optional_fields,
     });
 

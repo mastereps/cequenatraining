@@ -1,6 +1,10 @@
 import { loginUser, registerUser } from "../services/authService.js";
 import { isAppError } from "../utils/errors.js";
 import { logger } from "../utils/logger.js";
+import {
+  clearAuthSessionCookie,
+  setAuthSessionCookie,
+} from "../utils/authSession.js";
 
 const handleAuthError = (res, error, context) => {
   if (isAppError(error)) {
@@ -27,6 +31,7 @@ export const registerUserController = async (req, res) => {
       email: req.body?.email,
       password: req.body?.password,
     });
+    setAuthSessionCookie(res, user);
     return res.status(201).json({ ok: true, user });
   } catch (error) {
     return handleAuthError(res, error, "auth_register");
@@ -39,8 +44,25 @@ export const loginUserController = async (req, res) => {
       email: req.body?.email,
       password: req.body?.password,
     });
+    setAuthSessionCookie(res, user);
     return res.json({ ok: true, user });
   } catch (error) {
     return handleAuthError(res, error, "auth_login");
   }
+};
+
+export const getAuthSessionController = (req, res) => {
+  if (!req.authUser) {
+    return res.status(401).json({ error: "Not authenticated." });
+  }
+
+  return res.json({
+    ok: true,
+    user: req.authUser,
+  });
+};
+
+export const logoutUserController = (_req, res) => {
+  clearAuthSessionCookie(res);
+  return res.json({ ok: true });
 };

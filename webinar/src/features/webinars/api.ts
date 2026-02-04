@@ -39,7 +39,9 @@ const toQueryString = (filters: WebinarFilters) => {
 };
 
 export const fetchWebinars = async (filters: WebinarFilters = {}): Promise<Webinar[]> => {
-  const res = await fetch(`/api/webinars${toQueryString(filters)}`);
+  const res = await fetch(`/api/webinars${toQueryString(filters)}`, {
+    credentials: "include",
+  });
   if (!res.ok) {
     throw new Error(await getErrorMessage(res));
   }
@@ -49,7 +51,9 @@ export const fetchWebinars = async (filters: WebinarFilters = {}): Promise<Webin
 };
 
 export const fetchWebinarBySlug = async (slug: string): Promise<Webinar> => {
-  const res = await fetch(`/api/webinars/${encodeURIComponent(slug)}`);
+  const res = await fetch(`/api/webinars/${encodeURIComponent(slug)}`, {
+    credentials: "include",
+  });
   if (!res.ok) {
     throw new Error(await getErrorMessage(res));
   }
@@ -64,6 +68,7 @@ export const registerWebinar = async (
 ): Promise<WebinarRegisterResponse> => {
   const res = await fetch(`/api/webinars/${encodeURIComponent(slug)}/register`, {
     method: "POST",
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
     },
@@ -78,7 +83,9 @@ export const registerWebinar = async (
 };
 
 export const verifyWebinarToken = async (token: string): Promise<VerifyResponse> => {
-  const res = await fetch(`/api/verify?token=${encodeURIComponent(token)}`);
+  const res = await fetch(`/api/verify?token=${encodeURIComponent(token)}`, {
+    credentials: "include",
+  });
   if (!res.ok) {
     throw new Error(await getErrorMessage(res));
   }
@@ -97,6 +104,7 @@ export const resendConfirmationEmail = async (
 
   const res = await fetch(`/api/webinars/${encodeURIComponent(slug)}/resend-confirmation`, {
     method: "POST",
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
       "Idempotency-Key": idempotencyKey,
@@ -122,6 +130,9 @@ export const fetchRegistrationStatus = async (
   }
   const res = await fetch(
     `/api/webinars/${encodeURIComponent(slug)}/registration-status?${params.toString()}`,
+    {
+      credentials: "include",
+    },
   );
   if (!res.ok) {
     throw new Error(await getErrorMessage(res));

@@ -104,7 +104,7 @@ const NavBar = () => {
                 </button>
               ) : (
                 <Link
-                  to="/login?next=/checkout"
+                  to="/login"
                   className="text-sm font-semibold uppercase tracking-[0.08em] hover:opacity-80"
                 >
                   Login

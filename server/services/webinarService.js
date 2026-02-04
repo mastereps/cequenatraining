@@ -151,10 +151,26 @@ export const getRegistrationStatusForWebinar = async ({ slug, email, userId }) =
   }
 
   let result;
-  if (cleanUserId) {
+  if (cleanUserId && cleanEmail) {
     result = await pool.query(
       `
-        SELECT wr.status
+        SELECT wr.status, wr.email, wr.user_id
+        FROM webinar_registrations wr
+        JOIN webinars w ON w.id = wr.webinar_id
+        WHERE w.slug = $1
+          AND w.is_published = true
+          AND (wr.user_id = $2 OR wr.email = $3)
+        ORDER BY
+          CASE WHEN wr.user_id = $2 THEN 0 ELSE 1 END,
+          CASE wr.status WHEN 'verified' THEN 0 WHEN 'pending' THEN 1 ELSE 2 END
+        LIMIT 1
+      `,
+      [cleanSlug, cleanUserId, cleanEmail],
+    );
+  } else if (cleanUserId) {
+    result = await pool.query(
+      `
+        SELECT wr.status, wr.email, wr.user_id
         FROM webinar_registrations wr
         JOIN webinars w ON w.id = wr.webinar_id
         WHERE w.slug = $1
@@ -167,7 +183,7 @@ export const getRegistrationStatusForWebinar = async ({ slug, email, userId }) =
   } else {
     result = await pool.query(
       `
-        SELECT wr.status
+        SELECT wr.status, wr.email, wr.user_id
         FROM webinar_registrations wr
         JOIN webinars w ON w.id = wr.webinar_id
         WHERE w.slug = $1
@@ -179,11 +195,12 @@ export const getRegistrationStatusForWebinar = async ({ slug, email, userId }) =
     );
   }
 
-  const status = result.rows[0]?.status || null;
+  const matchedRegistration = result.rows[0] || null;
+  const status = matchedRegistration?.status || null;
   return {
     webinar_slug: cleanSlug,
-    email: cleanEmail || null,
-    user_id: cleanUserId,
+    email: matchedRegistration?.email || cleanEmail || null,
+    user_id: matchedRegistration?.user_id || cleanUserId,
     registered: status === "pending" || status === "verified",
     status,
   };

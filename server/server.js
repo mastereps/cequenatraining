@@ -11,6 +11,7 @@ import webinarsRouter from "./routes/webinars.js";
 import authRouter from "./routes/auth.js";
 import { logger } from "./utils/logger.js";
 import { startEmailOutboxWorker } from "./workers/emailOutboxWorker.js";
+import { attachAuthUser } from "./middleware/auth.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -18,9 +19,30 @@ dotenv.config();
 dotenv.config({ path: path.resolve(__dirname, "../webinar/.env") });
 
 const app = express();
+const isProduction = process.env.NODE_ENV === "production";
+const allowedCorsOrigins = String(process.env.CORS_ORIGINS || "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 
 // middleware
-app.use(cors());
+app.use(
+  cors({
+    credentials: true,
+    origin: (origin, callback) => {
+      // Requests from the same origin or non-browser clients can proceed.
+      if (!origin) {
+        return callback(null, true);
+      }
+
+      if (allowedCorsOrigins.length === 0) {
+        return callback(null, !isProduction);
+      }
+
+      return callback(null, allowedCorsOrigins.includes(origin));
+    },
+  }),
+);
 app.use(
   express.json({
     verify: (req, _res, buf) => {
@@ -28,6 +50,7 @@ app.use(
     },
   })
 );
+app.use(attachAuthUser);
 
 app.use((req, res, next) => {
   const startedAt = Date.now();

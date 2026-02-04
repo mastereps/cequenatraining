@@ -1,20 +1,67 @@
 import { useEffect, useState } from "react";
-import { fetchWebinars } from "../../features/webinars/api";
+import { fetchRegistrationStatus, fetchWebinars } from "../../features/webinars/api";
+import {
+  clearSubmittedEmailForWebinar,
+  getSubmittedEmailForWebinar,
+  setSubmittedEmailForWebinar,
+} from "../../features/webinars/registrationSession";
 import type { Webinar } from "../../features/webinars/types";
 import WebinarCard from "../../features/webinars/components/WebinarCard";
+import { useAuth } from "../../store/AuthContext";
 
 const LatestEvents = () => {
+  const { user } = useAuth();
   const [webinars, setWebinars] = useState<Webinar[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const syncSubmittedLocks = async (data: Webinar[]) => {
+    await Promise.all(
+      data.map(async (webinar) => {
+        if (user) {
+          try {
+            const status = await fetchRegistrationStatus(webinar.slug, {
+              userId: user.id,
+              email: user.email,
+            });
+            if (status.registered) {
+              setSubmittedEmailForWebinar(webinar.slug, status.email || user.email);
+            } else {
+              clearSubmittedEmailForWebinar(webinar.slug);
+            }
+            return;
+          } catch {
+            // Fallback to session lock check below.
+          }
+        }
+
+        const submittedEmail = getSubmittedEmailForWebinar(webinar.slug);
+        if (!submittedEmail) return;
+
+        try {
+          const status = await fetchRegistrationStatus(webinar.slug, { email: submittedEmail });
+          if (!status.registered) {
+            clearSubmittedEmailForWebinar(webinar.slug);
+          }
+        } catch {
+          clearSubmittedEmailForWebinar(webinar.slug);
+        }
+      }),
+    );
+  };
+
   useEffect(() => {
     let active = true;
     const load = async () => {
+      setLoading(true);
+      setError(null);
+
       try {
         const response = await fetchWebinars({ availability: "open", limit: 3 });
+        const latest = response.slice(0, 3);
+        await syncSubmittedLocks(latest);
         if (active) {
-          setWebinars(response.slice(0, 3));
+          setWebinars(latest);
         }
       } catch (loadError) {
         const message =
@@ -33,7 +80,7 @@ const LatestEvents = () => {
     return () => {
       active = false;
     };
-  }, []);
+  }, [user]);
 
   if (loading) {
     return <section className="mx-auto my-16 max-w-[1240px] px-4">Loading latest webinars...</section>;
