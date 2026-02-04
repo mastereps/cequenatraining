@@ -34,3 +34,4 @@ migration_20260120_add_payments.sql
 
 fullstack_testv5.sql
 fullstack_testv6.sql
+server/migrations/20260204_webinar_registration_system.sql

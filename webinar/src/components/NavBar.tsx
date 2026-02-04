@@ -10,8 +10,8 @@ import { useCart } from "../store/CartContext";
 const NavBar = () => {
   const links = [
     { label: "Home", href: "/" },
-    { label: "Company", href: "/company" },
-    { label: "Resources", href: "/resources" },
+    { label: "Webinars", href: "/webinars" },
+    { label: "Products", href: "/products" },
     { label: "About", href: "/about" },
     { label: "Contact", href: "/contact" },
   ];

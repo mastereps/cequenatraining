@@ -52,6 +52,7 @@
 // export default Hero;
 
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import HeroOne from "../../assets/images/hero-webinar.jpg";
 import HeroTwo from "../../assets/images/books.jpg";
 
@@ -60,7 +61,7 @@ const slides = [
     title: "Practical Webinars",
     subtitle: "Workshops on research writing and innovative teaching",
     cta: "Save My Seat",
-    href: "#",
+    href: "/webinars",
     image: HeroOne,
   },
   {
@@ -121,12 +122,12 @@ const Hero = () => {
               <p className="text-lg font-text uppercase tracking-[0.05em]">
                 {s.subtitle}
               </p>
-              <a
-                href={s.href}
+              <Link
+                to={s.href}
                 className="inline-block mt-4 px-8 py-3 font-text font-bold uppercase tracking-[0.08em] bg-lantern text-white transition-all duration-300 hover:bg-white hover:text-black hover:shadow-[0_0_0_.2rem_#fff]"
               >
                 {s.cta}
-              </a>
+              </Link>
             </div>
           </div>
         ))}

@@ -19,15 +19,15 @@ const Credibility = () => {
           their teaching strategies and improve learner outcomes.
         </p>
         <div className="flex gap-4 justify-center">
-          <a
-            href="#"
+          <Link
+            to="/webinars"
             className="inline-block mt-4 px-8 py-3 font-text font-bold uppercase tracking-[0.08em]
              bg-lantern text-white rounded-sm transition-all duration-300
              hover:bg-lantern/85 hover:text-white hover:shadow-[0_10px_30px_rgba(97,176,139,0.35)]
              dark:hover:bg-white dark:hover:text-black dark:hover:shadow-[0_0_0_.2rem_#fff]"
           >
             Reserve Your Spot
-          </a>
+          </Link>
           <Link
             to="/products"
             className="inline-block mt-4 px-8 py-3 font-text font-bold uppercase tracking-[0.08em]

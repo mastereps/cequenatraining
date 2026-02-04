@@ -1,71 +1,65 @@
-import { useEffect, useMemo, useState } from "react";
-import Cards from "../../components/Cards";
-import type EventCardData from "../../entities/EventCard";
+import { useEffect, useState } from "react";
+import { fetchWebinars } from "../../features/webinars/api";
+import type { Webinar } from "../../features/webinars/types";
+import WebinarCard from "../../features/webinars/components/WebinarCard";
 
 const LatestEvents = () => {
-  const [events, setEvents] = useState<EventCardData[]>([]);
+  const [webinars, setWebinars] = useState<Webinar[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    let cancelled = false;
-    async function load() {
+    let active = true;
+    const load = async () => {
       try {
-        const res = await fetch("/api/events");
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data: EventCardData[] = await res.json();
-        if (!cancelled) setEvents(data);
-      } catch (err) {
-        console.error("Failed to load events", err);
-        if (!cancelled) setError("Couldn't load events right now.");
+        const response = await fetchWebinars({ availability: "open", limit: 3 });
+        if (active) {
+          setWebinars(response.slice(0, 3));
+        }
+      } catch (loadError) {
+        const message =
+          loadError instanceof Error ? loadError.message : "Couldn't load webinars right now.";
+        if (active) {
+          setError(message);
+        }
       } finally {
-        if (!cancelled) setLoading(false);
+        if (active) {
+          setLoading(false);
+        }
       }
-    }
-    load();
+    };
+
+    void load();
     return () => {
-      cancelled = true;
+      active = false;
     };
   }, []);
 
-  const latest = useMemo(
-    () =>
-      [...events]
-        .filter((ev) => ev.event_date)
-        .sort(
-          (a, b) =>
-            new Date(b.event_date as string).getTime() -
-            new Date(a.event_date as string).getTime()
-        )
-        .slice(0, 3),
-    [events]
-  );
+  if (loading) {
+    return <section className="mx-auto my-16 max-w-[1240px] px-4">Loading latest webinars...</section>;
+  }
 
-  if (loading)
+  if (error) {
     return (
-      <section className="max-w-[1240px] mx-auto px-4 my-16">
-        Loading latest webinars…
-      </section>
-    );
-  if (error)
-    return (
-      <section className="max-w-[1240px] mx-auto px-4 my-16 text-red-600">
+      <section className="mx-auto my-16 max-w-[1240px] px-4 text-red-600">
         {error}
       </section>
     );
-  if (latest.length === 0) return null;
+  }
+
+  if (webinars.length === 0) return null;
 
   return (
-    <section className="max-w-[1240px] mx-auto px-4 my-24">
-      <header className="text-center mb-10">
-        <p className="headline-gradient text-lg font-text uppercase tracking-[0.05em] mb-3 font-bold">
+    <section className="mx-auto my-24 max-w-[1240px] px-4">
+      <header className="mb-10 text-center">
+        <p className="headline-gradient mb-3 font-text text-lg font-bold uppercase tracking-[0.05em]">
           Up next
         </p>
-        <h2 className="font-heading uppercase text-4xl">Latest Webinars</h2>
+        <h2 className="font-heading text-4xl uppercase">Latest Webinars</h2>
       </header>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 justify-items-center">
-        {latest.map((ev) => (
-          <Cards key={ev.id} event={ev} />
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {webinars.map((webinar) => (
+          <WebinarCard key={webinar.id} webinar={webinar} />
         ))}
       </div>
     </section>

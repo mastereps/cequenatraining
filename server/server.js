@@ -7,6 +7,9 @@ import nodemailer from "nodemailer";
 import { query, pool } from "./db.js"; // keep .js if db.js is still JS
 import paymentsRouter from "./routes/payments.js";
 import webhooksRouter from "./routes/webhooks.js";
+import webinarsRouter from "./routes/webinars.js";
+import { logger } from "./utils/logger.js";
+import { startEmailOutboxWorker } from "./workers/emailOutboxWorker.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -24,6 +27,20 @@ app.use(
     },
   })
 );
+
+app.use((req, res, next) => {
+  const startedAt = Date.now();
+  res.on("finish", () => {
+    logger.info("http_request_completed", {
+      method: req.method,
+      path: req.originalUrl,
+      status_code: res.statusCode,
+      duration_ms: Date.now() - startedAt,
+      ip: req.ip,
+    });
+  });
+  next();
+});
 
 const toPositiveInt = (value, fallback) => {
   const num = Number(value);
@@ -69,6 +86,7 @@ app.get("/api/health", (_req, res) => {
 
 app.use("/api/payments", paymentsRouter);
 app.use("/api/webhooks", webhooksRouter);
+app.use("/api", webinarsRouter);
 
 app.post("/api/contact", async (req, res) => {
   const email = String(req.body?.email || "").trim();
@@ -659,6 +677,20 @@ app.post("/api/cart/:cartId/checkout", async (req, res) => {
 
 const port = process.env.PORT || 5001;
 
-app.listen(port, () => {
-  console.log(`API running on http://localhost:${port}`);
+const stopEmailOutboxWorker = startEmailOutboxWorker();
+
+const server = app.listen(port, () => {
+  logger.info("api_started", { port });
 });
+
+const gracefulShutdown = () => {
+  logger.info("api_shutdown_started");
+  stopEmailOutboxWorker();
+  server.close(() => {
+    logger.info("api_shutdown_complete");
+    process.exit(0);
+  });
+};
+
+process.on("SIGINT", gracefulShutdown);
+process.on("SIGTERM", gracefulShutdown);

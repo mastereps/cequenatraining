@@ -14,6 +14,11 @@ import Footer from "./pages/Footer";
 import ContactPage from "./pages/ContactPage";
 import PrivacyPolicy from "./pages/Privacy/PrivacyPolicy";
 import ProductsCollectionPage from "./pages/ProductsCollectionPage";
+import WebinarsPage from "./pages/webinars/WebinarsPage";
+import WebinarDetailPage from "./pages/webinars/WebinarDetailPage";
+import WebinarRegisterPage from "./pages/webinars/WebinarRegisterPage";
+import VerifyPage from "./pages/webinars/VerifyPage";
+import WebinarConfirmedPage from "./pages/webinars/WebinarConfirmedPage";
 // import EventsList from "./components/EventList";
 // import SearchInput from "./components/SearchInput";
 // import { useState } from "react";
@@ -42,6 +47,11 @@ function App() {
         <Route path="/about" element={<AboutPage />} />
         <Route path="/products" element={<ProductsCollectionPage />} />
         <Route path="/products/:slug" element={<BookDetails />} />
+        <Route path="/webinars" element={<WebinarsPage />} />
+        <Route path="/webinars/:slug" element={<WebinarDetailPage />} />
+        <Route path="/webinars/:slug/register" element={<WebinarRegisterPage />} />
+        <Route path="/verify" element={<VerifyPage />} />
+        <Route path="/webinars/:slug/confirmed" element={<WebinarConfirmedPage />} />
         <Route path="/cart" element={<CartPage />} />
         <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/checkout/success" element={<CheckoutSuccess />} />
