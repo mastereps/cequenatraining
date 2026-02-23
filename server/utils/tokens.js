@@ -1,3 +1,4 @@
+import "../loadEnv.js";
 import crypto from "crypto";
 
 const VERIFY_TOKEN_BYTES = 32;

@@ -1,8 +1,6 @@
+import "./loadEnv.js";
 import express from "express";
 import cors from "cors";
-import dotenv from "dotenv";
-import path from "path";
-import { fileURLToPath } from "url";
 import nodemailer from "nodemailer";
 import { query, pool } from "./db.js"; // keep .js if db.js is still JS
 import paymentsRouter from "./routes/payments.js";
@@ -12,11 +10,6 @@ import authRouter from "./routes/auth.js";
 import { logger } from "./utils/logger.js";
 import { startEmailOutboxWorker } from "./workers/emailOutboxWorker.js";
 import { attachAuthUser } from "./middleware/auth.js";
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-
-dotenv.config();
-dotenv.config({ path: path.resolve(__dirname, "../webinar/.env") });
 
 const app = express();
 const isProduction = process.env.NODE_ENV === "production";

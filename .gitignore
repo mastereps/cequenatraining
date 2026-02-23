@@ -27,7 +27,6 @@ dist-ssr
 # tutorial
  
 cart_schema.sql
-.env.example
 fullstack_testv3_20_01_2026.sql
 fullstack_testv4_Altered.sql
 migration_20260120_add_payments.sql

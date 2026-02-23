@@ -1,3 +1,4 @@
+import "../loadEnv.js";
 import crypto from "crypto";
 
 const isProduction = process.env.NODE_ENV === "production";

@@ -1,9 +1,7 @@
+import "./loadEnv.js";
 import pkg from "pg";
 const { Pool } = pkg;
-import dotenv from "dotenv";
 import { logger } from "./utils/logger.js";
-
-dotenv.config();
 
 const pgPort = Number(process.env.PGPORT || 5432);
 
