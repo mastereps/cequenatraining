@@ -16,7 +16,19 @@ import {
 } from "./idempotencyService.js";
 
 const verifyTokenTtlMinutes = Number(process.env.VERIFY_TOKEN_TTL_MINUTES || 1440);
-const publicBaseUrl = process.env.PUBLIC_BASE_URL || "http://localhost:5173";
+const resolvePublicBaseUrl = () => {
+  const fallback = "http://localhost:5173";
+  const raw = String(process.env.PUBLIC_BASE_URL || fallback).trim();
+
+  try {
+    // Use origin so verification URLs are always `https://host/verify?...`.
+    return new URL(raw).origin;
+  } catch {
+    return fallback;
+  }
+};
+
+const publicBaseUrl = resolvePublicBaseUrl();
 
 const mapWebinar = (row) => ({
   id: row.id,
