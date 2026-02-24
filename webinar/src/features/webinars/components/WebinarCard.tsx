@@ -1,5 +1,8 @@
 import { Link } from "react-router-dom";
-import { hasSubmittedWebinarRegistration } from "../registrationSession";
+import {
+  getSubmittedEmailForWebinar,
+  getSubmittedStatusForWebinar,
+} from "../registrationSession";
 import type { Webinar } from "../types";
 import { formatManilaDateTime, formatSeatLabel } from "../format";
 
@@ -8,7 +11,8 @@ interface WebinarCardProps {
 }
 
 const WebinarCard = ({ webinar }: WebinarCardProps) => {
-  const alreadySubmitted = hasSubmittedWebinarRegistration(webinar.slug);
+  const submittedEmail = getSubmittedEmailForWebinar(webinar.slug);
+  const submittedStatus = getSubmittedStatusForWebinar(webinar.slug);
 
   return (
     <article className="h-full rounded-lg border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
@@ -31,13 +35,20 @@ const WebinarCard = ({ webinar }: WebinarCardProps) => {
         </div>
 
         <div className="mt-6">
-          {alreadySubmitted ? (
+          {submittedStatus === "verified" ? (
             <span
               aria-disabled="true"
               className="inline-block cursor-not-allowed rounded bg-emerald-700 px-5 py-3 font-text text-sm font-bold uppercase tracking-[0.08em] text-white opacity-80"
             >
               Already registered
             </span>
+          ) : submittedStatus === "pending" && submittedEmail ? (
+            <Link
+              to={`/webinars/${webinar.slug}/submitted?email=${encodeURIComponent(submittedEmail)}`}
+              className="inline-block rounded bg-amber-600 px-5 py-3 font-text text-sm font-bold uppercase tracking-[0.08em] text-white transition hover:bg-amber-700"
+            >
+              Verification pending
+            </Link>
           ) : (
             <Link
               to={`/webinars/${webinar.slug}`}

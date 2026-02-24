@@ -4,6 +4,7 @@ import { fetchWebinarBySlug } from "../../features/webinars/api";
 import {
   getSubmittedEmailForWebinar,
   setSubmittedEmailForWebinar,
+  setSubmittedStatusForWebinar,
 } from "../../features/webinars/registrationSession";
 import type { Webinar } from "../../features/webinars/types";
 
@@ -24,6 +25,7 @@ const WebinarSubmittedPage = () => {
     }
 
     setSubmittedEmailForWebinar(slug, submittedEmail);
+    setSubmittedStatusForWebinar(slug, "pending");
 
     let active = true;
     const load = async () => {

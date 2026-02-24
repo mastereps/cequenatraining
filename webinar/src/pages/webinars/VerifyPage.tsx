@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { verifyWebinarToken } from "../../features/webinars/api";
+import {
+  setSubmittedEmailForWebinar,
+  setSubmittedStatusForWebinar,
+} from "../../features/webinars/registrationSession";
 import type { VerifyResponse } from "../../features/webinars/types";
 
 const VerifyPage = () => {
@@ -23,6 +27,8 @@ const VerifyPage = () => {
       setLoading(true);
       try {
         const response = await verifyWebinarToken(token);
+        setSubmittedEmailForWebinar(response.webinar_slug, response.email);
+        setSubmittedStatusForWebinar(response.webinar_slug, "verified");
         if (active) setResult(response);
       } catch (verifyError) {
         const message =

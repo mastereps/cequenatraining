@@ -4,7 +4,9 @@ import { fetchRegistrationStatus, fetchWebinarBySlug } from "../../features/webi
 import {
   clearSubmittedEmailForWebinar,
   getSubmittedEmailForWebinar,
+  getSubmittedStatusForWebinar,
   setSubmittedEmailForWebinar,
+  setSubmittedStatusForWebinar,
 } from "../../features/webinars/registrationSession";
 import type { Webinar } from "../../features/webinars/types";
 import { formatManilaDateTime, formatSeatLabel } from "../../features/webinars/format";
@@ -14,7 +16,10 @@ const WebinarDetailPage = () => {
   const { slug = "" } = useParams();
   const { user } = useAuth();
   const [webinar, setWebinar] = useState<Webinar | null>(null);
-  const [alreadySubmitted, setAlreadySubmitted] = useState(false);
+  const [registrationStatus, setRegistrationStatus] = useState<"pending" | "verified" | null>(
+    null,
+  );
+  const [submittedEmail, setSubmittedEmail] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -53,33 +58,56 @@ const WebinarDetailPage = () => {
             email: user.email,
           });
           if (status.registered) {
-            setSubmittedEmailForWebinar(webinar.slug, status.email || user.email);
+            const targetEmail = status.email || user.email;
+            setSubmittedEmailForWebinar(webinar.slug, targetEmail);
+            if (active) setSubmittedEmail(targetEmail);
+            if (status.status === "pending" || status.status === "verified") {
+              setSubmittedStatusForWebinar(webinar.slug, status.status);
+              if (active) setRegistrationStatus(status.status);
+            } else if (active) {
+              setRegistrationStatus(null);
+            }
           } else {
             clearSubmittedEmailForWebinar(webinar.slug);
+            if (active) setSubmittedEmail("");
+            if (active) setRegistrationStatus(null);
           }
-          if (active) setAlreadySubmitted(status.registered);
           return;
         } catch {
-          if (active) setAlreadySubmitted(false);
+          if (active) setRegistrationStatus(null);
           return;
         }
       }
 
-      const submittedEmail = getSubmittedEmailForWebinar(webinar.slug);
-      if (!submittedEmail) {
-        if (active) setAlreadySubmitted(false);
+      const rememberedEmail = getSubmittedEmailForWebinar(webinar.slug);
+      if (!rememberedEmail) {
+        if (active) setSubmittedEmail("");
+        if (active) setRegistrationStatus(null);
         return;
       }
 
       try {
-        const status = await fetchRegistrationStatus(webinar.slug, { email: submittedEmail });
+        const status = await fetchRegistrationStatus(webinar.slug, { email: rememberedEmail });
         if (!status.registered) {
           clearSubmittedEmailForWebinar(webinar.slug);
+          if (active) setSubmittedEmail("");
+          if (active) setRegistrationStatus(null);
+          return;
         }
-        if (active) setAlreadySubmitted(status.registered);
+
+        const targetEmail = status.email || rememberedEmail;
+        setSubmittedEmailForWebinar(webinar.slug, targetEmail);
+        if (active) setSubmittedEmail(targetEmail);
+        if (status.status === "pending" || status.status === "verified") {
+          setSubmittedStatusForWebinar(webinar.slug, status.status);
+          if (active) setRegistrationStatus(status.status);
+        } else if (active) {
+          setRegistrationStatus(getSubmittedStatusForWebinar(webinar.slug));
+        }
       } catch {
         clearSubmittedEmailForWebinar(webinar.slug);
-        if (active) setAlreadySubmitted(false);
+        if (active) setSubmittedEmail("");
+        if (active) setRegistrationStatus(null);
       }
     };
 
@@ -127,13 +155,20 @@ const WebinarDetailPage = () => {
       </div>
 
       <div className="mt-8 flex flex-wrap gap-4">
-        {alreadySubmitted ? (
+        {registrationStatus === "verified" ? (
           <span
             aria-disabled="true"
             className="cursor-not-allowed rounded bg-emerald-700 px-6 py-3 font-text text-sm font-bold uppercase tracking-[0.08em] text-white opacity-80"
           >
             Already registered
           </span>
+        ) : registrationStatus === "pending" ? (
+          <Link
+            to={`/webinars/${webinar.slug}/submitted?email=${encodeURIComponent(submittedEmail)}`}
+            className="rounded bg-amber-600 px-6 py-3 font-text text-sm font-bold uppercase tracking-[0.08em] text-white transition hover:bg-amber-700"
+          >
+            Verification pending
+          </Link>
         ) : (
           <Link
             to={`/webinars/${webinar.slug}/register`}

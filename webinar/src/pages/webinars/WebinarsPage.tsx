@@ -5,6 +5,7 @@ import {
   clearSubmittedEmailForWebinar,
   getSubmittedEmailForWebinar,
   setSubmittedEmailForWebinar,
+  setSubmittedStatusForWebinar,
 } from "../../features/webinars/registrationSession";
 import type { Webinar } from "../../features/webinars/types";
 import WebinarCard from "../../features/webinars/components/WebinarCard";
@@ -39,6 +40,9 @@ const WebinarsPage = () => {
             });
             if (status.registered) {
               setSubmittedEmailForWebinar(webinar.slug, status.email || user.email);
+              if (status.status === "pending" || status.status === "verified") {
+                setSubmittedStatusForWebinar(webinar.slug, status.status);
+              }
             } else {
               clearSubmittedEmailForWebinar(webinar.slug);
             }
@@ -55,6 +59,10 @@ const WebinarsPage = () => {
           const status = await fetchRegistrationStatus(webinar.slug, { email: submittedEmail });
           if (!status.registered) {
             clearSubmittedEmailForWebinar(webinar.slug);
+            return;
+          }
+          if (status.status === "pending" || status.status === "verified") {
+            setSubmittedStatusForWebinar(webinar.slug, status.status);
           }
         } catch {
           clearSubmittedEmailForWebinar(webinar.slug);

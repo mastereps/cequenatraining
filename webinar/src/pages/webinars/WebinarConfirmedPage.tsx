@@ -2,6 +2,10 @@ import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { fetchWebinarBySlug, resendConfirmationEmail } from "../../features/webinars/api";
+import {
+  setSubmittedEmailForWebinar,
+  setSubmittedStatusForWebinar,
+} from "../../features/webinars/registrationSession";
 import type { Webinar } from "../../features/webinars/types";
 import { formatManilaDateTime } from "../../features/webinars/format";
 
@@ -14,6 +18,12 @@ const WebinarConfirmedPage = () => {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!email) return;
+    setSubmittedEmailForWebinar(slug, email);
+    setSubmittedStatusForWebinar(slug, "verified");
+  }, [slug, email]);
 
   useEffect(() => {
     let active = true;

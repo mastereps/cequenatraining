@@ -10,6 +10,7 @@ import {
   clearSubmittedEmailForWebinar,
   getSubmittedEmailForWebinar,
   setSubmittedEmailForWebinar,
+  setSubmittedStatusForWebinar,
 } from "../../features/webinars/registrationSession";
 import type { Webinar } from "../../features/webinars/types";
 import { useAuth } from "../../store/AuthContext";
@@ -48,9 +49,14 @@ const WebinarRegisterPage = () => {
           if (status.registered) {
             const targetEmail = status.email || user.email;
             setSubmittedEmailForWebinar(slug, targetEmail);
-            navigate(`/webinars/${slug}/submitted?email=${encodeURIComponent(targetEmail)}`, {
-              replace: true,
-            });
+            if (status.status === "pending" || status.status === "verified") {
+              setSubmittedStatusForWebinar(slug, status.status);
+            }
+            const nextPath =
+              status.status === "verified"
+                ? `/webinars/${slug}/confirmed?email=${encodeURIComponent(targetEmail)}`
+                : `/webinars/${slug}/submitted?email=${encodeURIComponent(targetEmail)}`;
+            navigate(nextPath, { replace: true });
             return;
           }
         } catch {
@@ -63,9 +69,16 @@ const WebinarRegisterPage = () => {
         try {
           const status = await fetchRegistrationStatus(slug, { email: submittedEmail });
           if (status.registered) {
-            navigate(`/webinars/${slug}/submitted?email=${encodeURIComponent(submittedEmail)}`, {
-              replace: true,
-            });
+            const targetEmail = status.email || submittedEmail;
+            setSubmittedEmailForWebinar(slug, targetEmail);
+            if (status.status === "pending" || status.status === "verified") {
+              setSubmittedStatusForWebinar(slug, status.status);
+            }
+            const nextPath =
+              status.status === "verified"
+                ? `/webinars/${slug}/confirmed?email=${encodeURIComponent(targetEmail)}`
+                : `/webinars/${slug}/submitted?email=${encodeURIComponent(targetEmail)}`;
+            navigate(nextPath, { replace: true });
             return;
           }
 
@@ -112,6 +125,7 @@ const WebinarRegisterPage = () => {
         },
       });
       setSubmittedEmailForWebinar(slug, response.email);
+      setSubmittedStatusForWebinar(slug, "pending");
       navigate(`/webinars/${slug}/submitted?email=${encodeURIComponent(response.email)}`, {
         replace: true,
       });
