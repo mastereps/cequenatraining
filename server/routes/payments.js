@@ -1,6 +1,6 @@
 import express from "express";
 import { createGcashCheckout } from "../services/paymongo.js";
-import { query } from "../db.js";
+import { pool, query } from "../db.js";
 import { requireAuth } from "../middleware/auth.js";
 
 const router = express.Router();
@@ -24,6 +24,73 @@ const normalizeCheckoutItems = (items) => {
   return Array.from(merged.entries()).map(([id, quantity]) => ({ id, quantity }));
 };
 
+const createPendingOrderForCheckout = async ({
+  userId,
+  normalizedItems,
+  booksById,
+  checkoutId,
+}) => {
+  const subtotalCents = normalizedItems.reduce((sum, { id, quantity }) => {
+    const book = booksById.get(id);
+    return sum + Math.round(Number(book?.price_cents || 0)) * quantity;
+  }, 0);
+
+  const firstBook = booksById.get(normalizedItems[0]?.id);
+  const currency = String(firstBook?.currency || "PHP").toUpperCase();
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    const orderResult = await client.query(
+      `
+        INSERT INTO orders (
+          status,
+          subtotal_cents,
+          total_cents,
+          currency,
+          user_id,
+          tax_cents,
+          discount_cents,
+          payment_status,
+          provider,
+          provider_checkout_id
+        )
+        VALUES ('pending', $1, $1, $2, $3, 0, 0, 'unpaid', 'paymongo', $4)
+        RETURNING id
+      `,
+      [subtotalCents, currency, userId, checkoutId],
+    );
+
+    const orderId = orderResult.rows[0]?.id;
+
+    for (const { id, quantity } of normalizedItems) {
+      const book = booksById.get(id);
+      await client.query(
+        `
+          INSERT INTO order_items (order_id, book_id, quantity, unit_price_cents, currency)
+          VALUES ($1, $2, $3, $4, $5)
+        `,
+        [
+          orderId,
+          id,
+          quantity,
+          Math.round(Number(book?.price_cents || 0)),
+          String(book?.currency || "PHP").toUpperCase(),
+        ],
+      );
+    }
+
+    await client.query("COMMIT");
+    return orderId;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+};
+
 router.post("/gcash", requireAuth, async (req, res) => {
   const { items } = req.body || {};
 
@@ -40,7 +107,7 @@ router.post("/gcash", requireAuth, async (req, res) => {
     const itemIds = normalizedItems.map((item) => item.id);
     const booksResult = await query(
       `
-        SELECT id, title, price_cents, currency, is_active, in_stock
+        SELECT id, slug, title, price_cents, currency, is_active, in_stock
         FROM books
         WHERE id = ANY($1::int[])
       `,
@@ -79,7 +146,18 @@ router.post("/gcash", requireAuth, async (req, res) => {
       }/checkout/cancel`,
       description: `Book order by user ${req.authUser.id}`,
     });
-    return res.json(checkout);
+
+    const orderId = await createPendingOrderForCheckout({
+      userId: req.authUser.id,
+      normalizedItems,
+      booksById,
+      checkoutId: checkout.checkoutId,
+    });
+
+    return res.json({
+      ...checkout,
+      orderId,
+    });
   } catch (err) {
     const message =
       err instanceof Error ? err.message : "Payment request failed.";
