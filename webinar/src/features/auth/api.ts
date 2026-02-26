@@ -1,4 +1,4 @@
-import type { AuthResponse } from "./types";
+import type { AuthResponse, AuthSessionResponse } from "./types";
 
 const getErrorMessage = async (res: Response) => {
   try {
@@ -39,14 +39,14 @@ export const loginAuthUser = async (email: string, password: string): Promise<Au
   return (await res.json()) as AuthResponse;
 };
 
-export const fetchAuthSessionUser = async (): Promise<AuthResponse> => {
+export const fetchAuthSessionUser = async (): Promise<AuthSessionResponse> => {
   const res = await fetch("/api/auth/me", {
     credentials: "include",
   });
   if (!res.ok) {
     throw new Error(await getErrorMessage(res));
   }
-  return (await res.json()) as AuthResponse;
+  return (await res.json()) as AuthSessionResponse;
 };
 
 export const logoutAuthUser = async (): Promise<void> => {

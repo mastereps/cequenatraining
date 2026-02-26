@@ -10,3 +10,8 @@ export interface AuthResponse {
   ok: boolean;
   user: AuthUser;
 }
+
+export interface AuthSessionResponse {
+  ok: boolean;
+  user: AuthUser | null;
+}

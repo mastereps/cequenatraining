@@ -53,7 +53,10 @@ export const loginUserController = async (req, res) => {
 
 export const getAuthSessionController = (req, res) => {
   if (!req.authUser) {
-    return res.status(401).json({ error: "Not authenticated." });
+    return res.json({
+      ok: true,
+      user: null,
+    });
   }
 
   return res.json({
