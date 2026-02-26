@@ -1,5 +1,6 @@
 import express from "express";
 import {
+  createWebinarPaymentSessionController,
   getRegistrationStatusController,
   getWebinarBySlugController,
   listWebinarsController,
@@ -14,6 +15,7 @@ router.get("/webinars", listWebinarsController);
 router.get("/webinars/:slug", getWebinarBySlugController);
 router.get("/webinars/:slug/registration-status", getRegistrationStatusController);
 router.post("/webinars/:slug/register", registerForWebinarController);
+router.post("/webinars/:slug/payment-session", createWebinarPaymentSessionController);
 router.get("/verify", verifyRegistrationController);
 router.post("/webinars/:slug/resend-confirmation", resendConfirmationController);
 

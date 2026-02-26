@@ -4,6 +4,8 @@ import type {
   VerifyResponse,
   Webinar,
   WebinarListResponse,
+  WebinarPaymentSessionPayload,
+  WebinarPaymentSessionResponse,
   WebinarRegisterPayload,
   WebinarRegisterResponse,
   WebinarSingleResponse,
@@ -139,4 +141,24 @@ export const fetchRegistrationStatus = async (
   }
 
   return (await res.json()) as RegistrationStatusResponse;
+};
+
+export const createWebinarPaymentSession = async (
+  slug: string,
+  payload: WebinarPaymentSessionPayload,
+): Promise<WebinarPaymentSessionResponse> => {
+  const res = await fetch(`/api/webinars/${encodeURIComponent(slug)}/payment-session`, {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    throw new Error(await getErrorMessage(res));
+  }
+
+  return (await res.json()) as WebinarPaymentSessionResponse;
 };

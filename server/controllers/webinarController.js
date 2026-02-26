@@ -1,4 +1,5 @@
 import {
+  createWebinarPaymentSession,
   getRegistrationStatusForWebinar,
   getWebinarBySlug,
   listWebinars,
@@ -125,6 +126,28 @@ export const verifyRegistrationController = async (req, res) => {
     });
   } catch (error) {
     return handleError(res, error, "verify_registration");
+  }
+};
+
+export const createWebinarPaymentSessionController = async (req, res) => {
+  try {
+    const requestedUserId = parseRequestedUserId(req.body?.user_id);
+    if (requestedUserId && (!req.authUser || req.authUser.id !== requestedUserId)) {
+      return res.status(403).json({
+        error: "You are not allowed to create payment sessions for another user.",
+      });
+    }
+
+    const effectiveUserId = req.authUser?.id || requestedUserId;
+    const result = await createWebinarPaymentSession({
+      slug: req.params.slug,
+      email: req.body?.email,
+      userId: effectiveUserId,
+    });
+
+    return res.status(200).json(result);
+  } catch (error) {
+    return handleError(res, error, "create_webinar_payment_session");
   }
 };
 

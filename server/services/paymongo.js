@@ -15,7 +15,13 @@ export const createGcashCheckout = async ({
   successUrl,
   cancelUrl,
   description,
+  metadata,
 }) => {
+  const safeMetadata =
+    metadata && typeof metadata === "object" && !Array.isArray(metadata)
+      ? metadata
+      : undefined;
+
   const response = await fetch(PAYMONGO_API, {
     method: "POST",
     headers: {
@@ -30,6 +36,7 @@ export const createGcashCheckout = async ({
           success_url: successUrl,
           cancel_url: cancelUrl,
           description,
+          metadata: safeMetadata,
         },
       },
     }),

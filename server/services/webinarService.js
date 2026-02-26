@@ -10,12 +10,35 @@ import {
 import { generateVerificationToken, hashToken } from "../utils/tokens.js";
 import { enqueueEmail } from "./emailOutboxService.js";
 import { assertWithinRateLimit } from "./rateLimitService.js";
+import { createGcashCheckout } from "./paymongo.js";
 import {
   findIdempotentResponse,
   persistIdempotentResponse,
 } from "./idempotencyService.js";
 
 const verifyTokenTtlMinutes = Number(process.env.VERIFY_TOKEN_TTL_MINUTES || 1440);
+const defaultWebinarPriceCents = Number(process.env.WEBINAR_DEFAULT_PRICE_CENTS || 0);
+const webinarCurrency = String(process.env.WEBINAR_CURRENCY || "PHP")
+  .trim()
+  .toUpperCase();
+
+const toNonNegativeInteger = (value) => {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return null;
+  const rounded = Math.round(parsed);
+  return rounded >= 0 ? rounded : null;
+};
+
+const resolveWebinarPriceCents = (webinarRow) => {
+  const fromDb = toNonNegativeInteger(webinarRow?.price_cents);
+  if (fromDb !== null && fromDb > 0) return fromDb;
+
+  const fromEnv = toNonNegativeInteger(defaultWebinarPriceCents);
+  if (fromEnv !== null && fromEnv > 0) return fromEnv;
+
+  return 0;
+};
+
 const resolvePublicBaseUrl = () => {
   const fallback = "http://localhost:5173";
   const raw = String(process.env.PUBLIC_BASE_URL || fallback).trim();
@@ -40,6 +63,8 @@ const mapWebinar = (row) => ({
   end_at: row.end_at,
   timezone: row.timezone,
   capacity: row.capacity,
+  price_cents: row.price_cents === null || row.price_cents === undefined ? null : Number(row.price_cents),
+  currency: webinarCurrency,
   verified_count: Number(row.verified_count || 0),
   available_seats:
     row.available_seats === null || row.available_seats === undefined
@@ -61,6 +86,7 @@ const webinarSelectSql = `
     w.end_at,
     w.timezone,
     w.capacity,
+    w.price_cents,
     w.is_published,
     w.registration_open,
     w.zoom_join_url,
@@ -166,7 +192,7 @@ export const getRegistrationStatusForWebinar = async ({ slug, email, userId }) =
   if (cleanUserId && cleanEmail) {
     result = await pool.query(
       `
-        SELECT wr.status, wr.email, wr.user_id
+        SELECT wr.status, wr.email, wr.user_id, wr.payment_required, wr.payment_status, wr.paid_at
         FROM webinar_registrations wr
         JOIN webinars w ON w.id = wr.webinar_id
         WHERE w.slug = $1
@@ -182,7 +208,7 @@ export const getRegistrationStatusForWebinar = async ({ slug, email, userId }) =
   } else if (cleanUserId) {
     result = await pool.query(
       `
-        SELECT wr.status, wr.email, wr.user_id
+        SELECT wr.status, wr.email, wr.user_id, wr.payment_required, wr.payment_status, wr.paid_at
         FROM webinar_registrations wr
         JOIN webinars w ON w.id = wr.webinar_id
         WHERE w.slug = $1
@@ -195,7 +221,7 @@ export const getRegistrationStatusForWebinar = async ({ slug, email, userId }) =
   } else {
     result = await pool.query(
       `
-        SELECT wr.status, wr.email, wr.user_id
+        SELECT wr.status, wr.email, wr.user_id, wr.payment_required, wr.payment_status, wr.paid_at
         FROM webinar_registrations wr
         JOIN webinars w ON w.id = wr.webinar_id
         WHERE w.slug = $1
@@ -209,12 +235,23 @@ export const getRegistrationStatusForWebinar = async ({ slug, email, userId }) =
 
   const matchedRegistration = result.rows[0] || null;
   const status = matchedRegistration?.status || null;
+  const paymentRequired = matchedRegistration ? Boolean(matchedRegistration.payment_required) : null;
+  const paymentStatus = matchedRegistration?.payment_status || null;
+  const confirmationReady = Boolean(
+    status === "verified" &&
+      (paymentRequired === false || paymentStatus === "paid"),
+  );
+
   return {
     webinar_slug: cleanSlug,
     email: matchedRegistration?.email || cleanEmail || null,
     user_id: matchedRegistration?.user_id || cleanUserId,
     registered: status === "pending" || status === "verified",
     status,
+    payment_required: paymentRequired,
+    payment_status: paymentStatus,
+    paid_at: matchedRegistration?.paid_at || null,
+    confirmation_ready: confirmationReady,
   };
 };
 
@@ -296,6 +333,10 @@ export const registerForWebinar = async ({ slug, fullName, email, userId, option
       throw new AppError(409, "This webinar is already full.");
     }
 
+    const webinarPriceCents = resolveWebinarPriceCents(webinar);
+    const paymentRequired = webinarPriceCents > 0;
+    const initialPaymentStatus = paymentRequired ? "unpaid" : "paid";
+
     const registerRateLimit = await assertWithinRateLimit(client, {
       actionKey: "register",
       webinarId: webinar.id,
@@ -311,7 +352,7 @@ export const registerForWebinar = async ({ slug, fullName, email, userId, option
     const existingRegistration = cleanUserId
       ? await client.query(
           `
-            SELECT id, status
+            SELECT id, status, payment_status, payment_required
             FROM webinar_registrations
             WHERE webinar_id = $1
               AND (email = $2 OR user_id = $3)
@@ -322,7 +363,7 @@ export const registerForWebinar = async ({ slug, fullName, email, userId, option
         )
       : await client.query(
           `
-            SELECT id, status
+            SELECT id, status, payment_status, payment_required
             FROM webinar_registrations
             WHERE webinar_id = $1
               AND email = $2
@@ -353,6 +394,9 @@ export const registerForWebinar = async ({ slug, fullName, email, userId, option
             verified_at = NULL,
             optional_fields_json = $5::jsonb,
             user_id = COALESCE($6, user_id),
+            payment_required = $7,
+            payment_status = $8,
+            paid_at = CASE WHEN $7 THEN NULL ELSE COALESCE(paid_at, NOW()) END,
             last_verification_email_sent_at = NOW()
           WHERE id = $1
         `,
@@ -363,6 +407,8 @@ export const registerForWebinar = async ({ slug, fullName, email, userId, option
           tokenExpiry,
           JSON.stringify(safeOptionalFields),
           cleanUserId,
+          paymentRequired,
+          initialPaymentStatus,
         ],
       );
     } else {
@@ -377,9 +423,25 @@ export const registerForWebinar = async ({ slug, fullName, email, userId, option
             verify_token_hash,
             verify_token_expires_at,
             optional_fields_json,
+            payment_required,
+            payment_status,
+            paid_at,
             last_verification_email_sent_at
           )
-          VALUES ($1, $2, $3, $4, 'pending', $5, $6::timestamptz, $7::jsonb, NOW())
+          VALUES (
+            $1,
+            $2,
+            $3,
+            $4,
+            'pending',
+            $5,
+            $6::timestamptz,
+            $7::jsonb,
+            $8,
+            $9,
+            CASE WHEN $8 THEN NULL ELSE NOW() END,
+            NOW()
+          )
           RETURNING id
         `,
         [
@@ -390,6 +452,8 @@ export const registerForWebinar = async ({ slug, fullName, email, userId, option
           tokenHash,
           tokenExpiry,
           JSON.stringify(safeOptionalFields),
+          paymentRequired,
+          initialPaymentStatus,
         ],
       );
 
@@ -419,6 +483,8 @@ export const registerForWebinar = async ({ slug, fullName, email, userId, option
       webinar_slug: webinar.slug,
       email: cleanEmail,
       status: "pending",
+      payment_required: paymentRequired,
+      payment_status: initialPaymentStatus,
       message: "Check your email to verify your registration.",
     };
   } catch (error) {
@@ -448,6 +514,10 @@ export const verifyRegistration = async (token) => {
           wr.email,
           wr.full_name,
           wr.status,
+          wr.payment_required,
+          wr.payment_status,
+          wr.paid_at,
+          wr.last_confirmation_email_sent_at,
           wr.zoom_registrant_join_url,
           wr.verify_token_expires_at,
           w.id AS webinar_id,
@@ -472,6 +542,10 @@ export const verifyRegistration = async (token) => {
     const registration = registrationResult.rows[0];
 
     const joinUrl = registration.zoom_registrant_join_url || registration.zoom_join_url || null;
+    const paymentRequired = Boolean(registration.payment_required);
+    const paymentStatus = registration.payment_status || (paymentRequired ? "unpaid" : "paid");
+    const shouldSendConfirmation =
+      !paymentRequired || paymentStatus === "paid";
 
     if (registration.status === "cancelled") {
       throw new AppError(400, "Invalid or expired verification token.");
@@ -491,29 +565,35 @@ export const verifyRegistration = async (token) => {
           SET
             status = 'verified',
             verified_at = COALESCE(verified_at, NOW()),
-            last_confirmation_email_sent_at = NOW()
+            last_confirmation_email_sent_at = CASE
+              WHEN $2 THEN COALESCE(last_confirmation_email_sent_at, NOW())
+              ELSE last_confirmation_email_sent_at
+            END
           WHERE id = $1
         `,
-        [registration.id],
+        [registration.id, shouldSendConfirmation],
       );
 
-      await enqueueEmail(client, {
-        toEmail: registration.email,
-        templateKey: "webinar.confirmed",
-        payload: {
-          full_name: registration.full_name,
-          webinar_title: registration.title,
-          webinar_slug: registration.slug,
-          webinar_start_at: registration.start_at,
-          webinar_timezone: registration.timezone,
-          join_url: joinUrl,
-        },
-      });
+      if (shouldSendConfirmation) {
+        await enqueueEmail(client, {
+          toEmail: registration.email,
+          templateKey: "webinar.confirmed",
+          payload: {
+            full_name: registration.full_name,
+            webinar_title: registration.title,
+            webinar_slug: registration.slug,
+            webinar_start_at: registration.start_at,
+            webinar_timezone: registration.timezone,
+            join_url: joinUrl,
+          },
+        });
+      }
     } else if (registration.status !== "verified") {
       throw new AppError(400, "Invalid or expired verification token.");
     }
 
     await client.query("COMMIT");
+    const confirmationReady = !paymentRequired || paymentStatus === "paid";
 
     return {
       webinar_slug: registration.slug,
@@ -522,6 +602,227 @@ export const verifyRegistration = async (token) => {
       full_name: registration.full_name,
       join_url_included: Boolean(joinUrl),
       already_verified: registration.status === "verified",
+      payment_required: paymentRequired,
+      payment_status: paymentStatus,
+      paid_at: registration.paid_at || null,
+      confirmation_ready: confirmationReady,
+    };
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+};
+
+export const createWebinarPaymentSession = async ({ slug, email, userId }) => {
+  const cleanSlug = sanitizeText(slug, 150);
+  const cleanEmail = email ? normalizeEmail(email) : "";
+  const rawUserId = Number(userId);
+  const cleanUserId = Number.isInteger(rawUserId) && rawUserId > 0 ? rawUserId : null;
+
+  if (!cleanEmail && !cleanUserId) {
+    throw new AppError(400, "Either user_id or email is required.");
+  }
+
+  if (cleanEmail && !isValidEmail(cleanEmail)) {
+    throw new AppError(400, "A valid email is required.");
+  }
+
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    const webinarResult = await client.query(
+      `
+        SELECT id, slug, title, start_at, timezone, price_cents
+        FROM webinars
+        WHERE slug = $1
+          AND is_published = true
+        LIMIT 1
+        FOR UPDATE
+      `,
+      [cleanSlug],
+    );
+
+    if (webinarResult.rows.length === 0) {
+      throw new AppError(404, "Webinar not found.");
+    }
+
+    const webinar = webinarResult.rows[0];
+    if (new Date(webinar.start_at).getTime() <= Date.now()) {
+      throw new AppError(409, "This webinar can no longer accept payments.");
+    }
+
+    let registrationResult;
+    if (cleanUserId && cleanEmail) {
+      registrationResult = await client.query(
+        `
+          SELECT id, email, status, payment_required, payment_status
+          FROM webinar_registrations
+          WHERE webinar_id = $1
+            AND (user_id = $2 OR email = $3)
+          ORDER BY CASE WHEN user_id = $2 THEN 0 ELSE 1 END
+          LIMIT 1
+          FOR UPDATE
+        `,
+        [webinar.id, cleanUserId, cleanEmail],
+      );
+    } else if (cleanUserId) {
+      registrationResult = await client.query(
+        `
+          SELECT id, email, status, payment_required, payment_status
+          FROM webinar_registrations
+          WHERE webinar_id = $1
+            AND user_id = $2
+          LIMIT 1
+          FOR UPDATE
+        `,
+        [webinar.id, cleanUserId],
+      );
+    } else {
+      registrationResult = await client.query(
+        `
+          SELECT id, email, status, payment_required, payment_status
+          FROM webinar_registrations
+          WHERE webinar_id = $1
+            AND email = $2
+          LIMIT 1
+          FOR UPDATE
+        `,
+        [webinar.id, cleanEmail],
+      );
+    }
+
+    if (registrationResult.rows.length === 0) {
+      throw new AppError(404, "Registration not found for this webinar.");
+    }
+
+    const registration = registrationResult.rows[0];
+    if (registration.status !== "verified") {
+      throw new AppError(409, "Please verify your registration email before paying.");
+    }
+
+    const amountCents = resolveWebinarPriceCents(webinar);
+
+    if (!registration.payment_required) {
+      await client.query("COMMIT");
+      return {
+        ok: true,
+        webinar_slug: webinar.slug,
+        webinar_title: webinar.title,
+        email: registration.email,
+        payment_required: false,
+        payment_status: "paid",
+        already_paid: true,
+        amount_cents: amountCents || null,
+        currency: webinarCurrency,
+        checkout_url: null,
+        checkout_id: null,
+        message: "Payment is not required for this webinar.",
+      };
+    }
+
+    if (registration.payment_status === "paid") {
+      await client.query("COMMIT");
+      return {
+        ok: true,
+        webinar_slug: webinar.slug,
+        webinar_title: webinar.title,
+        email: registration.email,
+        payment_required: true,
+        payment_status: "paid",
+        already_paid: true,
+        amount_cents: amountCents || null,
+        currency: webinarCurrency,
+        checkout_url: null,
+        checkout_id: null,
+        message: "Registration is already paid.",
+      };
+    }
+
+    if (amountCents <= 0) {
+      throw new AppError(409, "Webinar pricing is not configured.");
+    }
+
+    const encodedEmail = encodeURIComponent(registration.email);
+    const successUrl = `${publicBaseUrl}/webinars/${encodeURIComponent(webinar.slug)}/confirmed?email=${encodedEmail}&payment=success`;
+    const cancelUrl = `${publicBaseUrl}/webinars/${encodeURIComponent(webinar.slug)}/confirmed?email=${encodedEmail}&payment=cancel`;
+
+    const checkout = await createGcashCheckout({
+      lineItems: [
+        {
+          name: webinar.title || "Webinar registration",
+          amount: amountCents,
+          currency: webinarCurrency,
+          quantity: 1,
+        },
+      ],
+      successUrl,
+      cancelUrl,
+      description: `Webinar payment for ${webinar.slug} (${registration.email})`,
+      metadata: {
+        webinar_slug: webinar.slug,
+        webinar_registration_id: registration.id,
+      },
+    });
+
+    await client.query(
+      `
+        INSERT INTO webinar_payment_sessions (
+          registration_id,
+          provider,
+          provider_checkout_id,
+          provider_checkout_url,
+          status,
+          amount_cents,
+          currency,
+          raw_payload
+        )
+        VALUES ($1, 'paymongo', $2, $3, 'payment_pending', $4, $5, $6::jsonb)
+      `,
+      [
+        registration.id,
+        checkout.checkoutId,
+        checkout.checkoutUrl,
+        amountCents,
+        webinarCurrency,
+        JSON.stringify({
+          checkout_id: checkout.checkoutId,
+          checkout_url: checkout.checkoutUrl,
+          created_via: "webinar.payment-session",
+        }),
+      ],
+    );
+
+    await client.query(
+      `
+        UPDATE webinar_registrations
+        SET payment_status = CASE
+              WHEN payment_status = 'paid' THEN payment_status
+              ELSE 'payment_pending'
+            END
+        WHERE id = $1
+      `,
+      [registration.id],
+    );
+
+    await client.query("COMMIT");
+
+    return {
+      ok: true,
+      webinar_slug: webinar.slug,
+      webinar_title: webinar.title,
+      email: registration.email,
+      payment_required: true,
+      payment_status: "payment_pending",
+      already_paid: false,
+      amount_cents: amountCents,
+      currency: webinarCurrency,
+      checkout_url: checkout.checkoutUrl,
+      checkout_id: checkout.checkoutId,
+      message: "Payment session created.",
     };
   } catch (error) {
     await client.query("ROLLBACK");
@@ -596,6 +897,8 @@ export const resendConfirmation = async ({ slug, email, idempotencyKey }) => {
           id,
           full_name,
           status,
+          payment_required,
+          payment_status,
           zoom_registrant_join_url
         FROM webinar_registrations
         WHERE webinar_id = $1
@@ -613,6 +916,9 @@ export const resendConfirmation = async ({ slug, email, idempotencyKey }) => {
     const registration = registrationResult.rows[0];
     if (registration.status !== "verified") {
       throw new AppError(409, "Registration is not verified yet.");
+    }
+    if (registration.payment_required && registration.payment_status !== "paid") {
+      throw new AppError(409, "Payment is still pending for this registration.");
     }
 
     const joinUrl = registration.zoom_registrant_join_url || webinar.zoom_join_url || null;

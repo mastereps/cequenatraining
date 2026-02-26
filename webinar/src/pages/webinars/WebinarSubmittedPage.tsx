@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { fetchWebinarBySlug } from "../../features/webinars/api";
+import { fetchRegistrationStatus, fetchWebinarBySlug } from "../../features/webinars/api";
 import {
   getSubmittedEmailForWebinar,
   setSubmittedEmailForWebinar,
@@ -32,6 +32,17 @@ const WebinarSubmittedPage = () => {
       setLoading(true);
       setError(null);
       try {
+        const registration = await fetchRegistrationStatus(slug, { email: submittedEmail });
+        if (registration.status === "verified") {
+          const targetEmail = registration.email || submittedEmail;
+          setSubmittedEmailForWebinar(slug, targetEmail);
+          setSubmittedStatusForWebinar(slug, "verified");
+          navigate(`/webinars/${slug}/confirmed?email=${encodeURIComponent(targetEmail)}`, {
+            replace: true,
+          });
+          return;
+        }
+
         const response = await fetchWebinarBySlug(slug);
         if (active) setWebinar(response);
       } catch (loadError) {

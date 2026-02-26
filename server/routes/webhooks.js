@@ -1,5 +1,6 @@
 import express from "express";
 import { pool } from "../db.js";
+import { enqueueEmail } from "../services/emailOutboxService.js";
 import { verifyPaymongoSignature } from "../services/paymongo.js";
 import { logger } from "../utils/logger.js";
 
@@ -155,6 +156,197 @@ const resolveOrderForEvent = async (client, context) => {
   }
 
   return null;
+};
+
+const resolveWebinarPaymentSessionForEvent = async (client, context) => {
+  const { checkoutSessionId, paymentId } = context;
+
+  if (checkoutSessionId) {
+    const byCheckoutId = await client.query(
+      `
+        SELECT
+          wps.id,
+          wps.registration_id,
+          wps.provider_checkout_id,
+          wps.provider_payment_id,
+          wps.status AS session_status,
+          wps.amount_cents,
+          wps.currency,
+          wr.status AS registration_status,
+          wr.payment_required,
+          wr.payment_status,
+          wr.paid_at,
+          wr.last_confirmation_email_sent_at,
+          wr.email,
+          wr.full_name,
+          wr.zoom_registrant_join_url,
+          w.slug,
+          w.title,
+          w.start_at,
+          w.timezone,
+          w.zoom_join_url
+        FROM webinar_payment_sessions wps
+        JOIN webinar_registrations wr ON wr.id = wps.registration_id
+        JOIN webinars w ON w.id = wr.webinar_id
+        WHERE wps.provider = $1
+          AND wps.provider_checkout_id = $2
+        LIMIT 1
+        FOR UPDATE OF wps, wr
+      `,
+      [PAYMONGO_PROVIDER, checkoutSessionId],
+    );
+
+    if (byCheckoutId.rows[0]) return byCheckoutId.rows[0];
+  }
+
+  if (!paymentId) return null;
+
+  const byPaymentId = await client.query(
+    `
+      SELECT
+        wps.id,
+        wps.registration_id,
+        wps.provider_checkout_id,
+        wps.provider_payment_id,
+        wps.status AS session_status,
+        wps.amount_cents,
+        wps.currency,
+        wr.status AS registration_status,
+        wr.payment_required,
+        wr.payment_status,
+        wr.paid_at,
+        wr.last_confirmation_email_sent_at,
+        wr.email,
+        wr.full_name,
+        wr.zoom_registrant_join_url,
+        w.slug,
+        w.title,
+        w.start_at,
+        w.timezone,
+        w.zoom_join_url
+      FROM webinar_payment_sessions wps
+      JOIN webinar_registrations wr ON wr.id = wps.registration_id
+      JOIN webinars w ON w.id = wr.webinar_id
+      WHERE wps.provider = $1
+        AND wps.provider_payment_id = $2
+      LIMIT 1
+      FOR UPDATE OF wps, wr
+    `,
+    [PAYMONGO_PROVIDER, paymentId],
+  );
+
+  return byPaymentId.rows[0] || null;
+};
+
+const updateWebinarPaymentSession = async ({
+  client,
+  sessionId,
+  providerPaymentId,
+  status,
+  rawPayloadJson,
+  amountCents,
+  currency,
+}) => {
+  await client.query(
+    `
+      UPDATE webinar_payment_sessions
+      SET provider_payment_id = COALESCE($2, provider_payment_id),
+          status = $3,
+          amount_cents = COALESCE($4, amount_cents),
+          currency = COALESCE($5, currency),
+          raw_payload = $6::jsonb,
+          updated_at = NOW()
+      WHERE id = $1
+    `,
+    [sessionId, providerPaymentId, status, amountCents, currency, rawPayloadJson],
+  );
+};
+
+const markWebinarRegistrationPaid = async (client, registrationId) => {
+  await client.query(
+    `
+      UPDATE webinar_registrations
+      SET payment_status = 'paid',
+          paid_at = COALESCE(paid_at, NOW())
+      WHERE id = $1
+        AND payment_required = true
+    `,
+    [registrationId],
+  );
+};
+
+const markWebinarRegistrationFailed = async (client, registrationId) => {
+  await client.query(
+    `
+      UPDATE webinar_registrations
+      SET payment_status = CASE
+            WHEN payment_status = 'paid' THEN payment_status
+            ELSE 'failed'
+          END
+      WHERE id = $1
+        AND payment_required = true
+    `,
+    [registrationId],
+  );
+};
+
+const markWebinarRegistrationRefunded = async (client, registrationId) => {
+  await client.query(
+    `
+      UPDATE webinar_registrations
+      SET payment_status = 'refunded'
+      WHERE id = $1
+        AND payment_required = true
+    `,
+    [registrationId],
+  );
+};
+
+const markWebinarRegistrationRefundFailed = async (client, registrationId) => {
+  await client.query(
+    `
+      UPDATE webinar_registrations
+      SET payment_status = CASE
+            WHEN payment_status = 'refunded' THEN 'paid'
+            ELSE payment_status
+          END
+      WHERE id = $1
+        AND payment_required = true
+    `,
+    [registrationId],
+  );
+};
+
+const enqueueWebinarConfirmationIfNeeded = async (client, registration) => {
+  if (registration.registration_status !== "verified") return false;
+  if (!registration.payment_required) return false;
+  if (registration.last_confirmation_email_sent_at) return false;
+
+  const joinUrl = registration.zoom_registrant_join_url || registration.zoom_join_url || null;
+
+  await enqueueEmail(client, {
+    toEmail: registration.email,
+    templateKey: "webinar.confirmed",
+    payload: {
+      full_name: registration.full_name,
+      webinar_title: registration.title,
+      webinar_slug: registration.slug,
+      webinar_start_at: registration.start_at,
+      webinar_timezone: registration.timezone,
+      join_url: joinUrl,
+    },
+  });
+
+  await client.query(
+    `
+      UPDATE webinar_registrations
+      SET last_confirmation_email_sent_at = COALESCE(last_confirmation_email_sent_at, NOW())
+      WHERE id = $1
+    `,
+    [registration.registration_id],
+  );
+
+  return true;
 };
 
 const upsertPaymentByProviderPaymentId = async ({
@@ -380,109 +572,216 @@ const processPaymongoEvent = async ({ payload, context }) => {
     }
 
     const order = await resolveOrderForEvent(client, context);
-    if (!order) {
+    if (order) {
+      const fallbackAmount = Number(order.total_cents ?? order.subtotal_cents ?? 0);
+      const amountCents =
+        context.amountCents && context.amountCents > 0
+          ? context.amountCents
+          : Math.max(1, Math.round(fallbackAmount));
+      const currency = context.currency || String(order.currency || "PHP").toUpperCase();
+
+      if (context.eventType === "checkout_session.payment.paid") {
+        await upsertPaymentByProviderPaymentId({
+          client,
+          orderId: order.id,
+          providerPaymentId: context.paymentId,
+          amountCents,
+          currency,
+          status: "paid",
+          rawPayloadJson,
+        });
+        await markOrderPaid(client, order.id);
+        await client.query("COMMIT");
+        return {
+          duplicate: false,
+          handled: true,
+          action: "marked_paid",
+          orderId: order.id,
+        };
+      }
+
+      if (context.eventType === "payment.failed") {
+        await upsertPaymentByProviderPaymentId({
+          client,
+          orderId: order.id,
+          providerPaymentId: context.paymentId,
+          amountCents,
+          currency,
+          status: "failed",
+          rawPayloadJson,
+        });
+        await markOrderFailed(client, order.id);
+        await client.query("COMMIT");
+        return {
+          duplicate: false,
+          handled: true,
+          action: "marked_failed",
+          orderId: order.id,
+        };
+      }
+
+      if (context.eventType === "payment.refunded") {
+        await upsertPaymentByProviderPaymentId({
+          client,
+          orderId: order.id,
+          providerPaymentId: context.paymentId,
+          amountCents,
+          currency,
+          status: "refunded",
+          rawPayloadJson,
+        });
+        await markOrderRefunded(client, order.id);
+        await client.query("COMMIT");
+        return {
+          duplicate: false,
+          handled: true,
+          action: "marked_refunded",
+          orderId: order.id,
+        };
+      }
+
+      if (context.eventType === "payment.refund.updated") {
+        const refundState = getRefundStateFromResource(context.resource);
+        await upsertPaymentByProviderPaymentId({
+          client,
+          orderId: order.id,
+          providerPaymentId: context.paymentId,
+          amountCents,
+          currency,
+          status: refundState,
+          rawPayloadJson,
+        });
+
+        if (refundState === "refunded") {
+          await markOrderRefunded(client, order.id);
+        } else if (refundState === "refund_failed") {
+          await markOrderRefundFailed(client, order.id);
+        } else {
+          await markOrderRefundPending(client, order.id);
+        }
+
+        await client.query("COMMIT");
+        return {
+          duplicate: false,
+          handled: true,
+          action: refundState,
+          orderId: order.id,
+        };
+      }
+
       await client.query("COMMIT");
-      return { duplicate: false, handled: false, action: "order_not_found" };
+      return { duplicate: false, handled: false, action: "ignored_event_type", orderId: order.id };
     }
 
-    const fallbackAmount = Number(order.total_cents ?? order.subtotal_cents ?? 0);
+    const webinarSession = await resolveWebinarPaymentSessionForEvent(client, context);
+    if (!webinarSession) {
+      await client.query("COMMIT");
+      return { duplicate: false, handled: false, action: "target_not_found" };
+    }
+
+    const fallbackAmount = Number(webinarSession.amount_cents || 0);
     const amountCents =
       context.amountCents && context.amountCents > 0
         ? context.amountCents
         : Math.max(1, Math.round(fallbackAmount));
-    const currency = context.currency || String(order.currency || "PHP").toUpperCase();
+    const currency = context.currency || String(webinarSession.currency || "PHP").toUpperCase();
 
     if (context.eventType === "checkout_session.payment.paid") {
-      await upsertPaymentByProviderPaymentId({
+      await updateWebinarPaymentSession({
         client,
-        orderId: order.id,
+        sessionId: webinarSession.id,
         providerPaymentId: context.paymentId,
-        amountCents,
-        currency,
         status: "paid",
         rawPayloadJson,
+        amountCents,
+        currency,
       });
-      await markOrderPaid(client, order.id);
+      await markWebinarRegistrationPaid(client, webinarSession.registration_id);
+      const queuedConfirmation = await enqueueWebinarConfirmationIfNeeded(client, webinarSession);
       await client.query("COMMIT");
       return {
         duplicate: false,
         handled: true,
-        action: "marked_paid",
-        orderId: order.id,
+        action: "webinar_marked_paid",
+        webinarRegistrationId: webinarSession.registration_id,
+        queuedConfirmation,
       };
     }
 
     if (context.eventType === "payment.failed") {
-      await upsertPaymentByProviderPaymentId({
+      await updateWebinarPaymentSession({
         client,
-        orderId: order.id,
+        sessionId: webinarSession.id,
         providerPaymentId: context.paymentId,
-        amountCents,
-        currency,
         status: "failed",
         rawPayloadJson,
+        amountCents,
+        currency,
       });
-      await markOrderFailed(client, order.id);
+      await markWebinarRegistrationFailed(client, webinarSession.registration_id);
       await client.query("COMMIT");
       return {
         duplicate: false,
         handled: true,
-        action: "marked_failed",
-        orderId: order.id,
+        action: "webinar_marked_failed",
+        webinarRegistrationId: webinarSession.registration_id,
       };
     }
 
     if (context.eventType === "payment.refunded") {
-      await upsertPaymentByProviderPaymentId({
+      await updateWebinarPaymentSession({
         client,
-        orderId: order.id,
+        sessionId: webinarSession.id,
         providerPaymentId: context.paymentId,
-        amountCents,
-        currency,
         status: "refunded",
         rawPayloadJson,
+        amountCents,
+        currency,
       });
-      await markOrderRefunded(client, order.id);
+      await markWebinarRegistrationRefunded(client, webinarSession.registration_id);
       await client.query("COMMIT");
       return {
         duplicate: false,
         handled: true,
-        action: "marked_refunded",
-        orderId: order.id,
+        action: "webinar_marked_refunded",
+        webinarRegistrationId: webinarSession.registration_id,
       };
     }
 
     if (context.eventType === "payment.refund.updated") {
       const refundState = getRefundStateFromResource(context.resource);
-      await upsertPaymentByProviderPaymentId({
+      await updateWebinarPaymentSession({
         client,
-        orderId: order.id,
+        sessionId: webinarSession.id,
         providerPaymentId: context.paymentId,
-        amountCents,
-        currency,
         status: refundState,
         rawPayloadJson,
+        amountCents,
+        currency,
       });
 
       if (refundState === "refunded") {
-        await markOrderRefunded(client, order.id);
+        await markWebinarRegistrationRefunded(client, webinarSession.registration_id);
       } else if (refundState === "refund_failed") {
-        await markOrderRefundFailed(client, order.id);
-      } else {
-        await markOrderRefundPending(client, order.id);
+        await markWebinarRegistrationRefundFailed(client, webinarSession.registration_id);
       }
 
       await client.query("COMMIT");
       return {
         duplicate: false,
         handled: true,
-        action: refundState,
-        orderId: order.id,
+        action: `webinar_${refundState}`,
+        webinarRegistrationId: webinarSession.registration_id,
       };
     }
 
     await client.query("COMMIT");
-    return { duplicate: false, handled: false, action: "ignored_event_type" };
+    return {
+      duplicate: false,
+      handled: false,
+      action: "ignored_event_type",
+      webinarRegistrationId: webinarSession.registration_id,
+    };
   } catch (error) {
     await client.query("ROLLBACK");
     throw error;
@@ -537,6 +836,7 @@ router.post("/paymongo", async (req, res) => {
       handled: result.handled,
       action: result.action,
       order_id: result.orderId || null,
+      webinar_registration_id: result.webinarRegistrationId || null,
     });
 
     return res.json({

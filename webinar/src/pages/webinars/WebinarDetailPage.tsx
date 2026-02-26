@@ -8,7 +8,7 @@ import {
   setSubmittedEmailForWebinar,
   setSubmittedStatusForWebinar,
 } from "../../features/webinars/registrationSession";
-import type { Webinar } from "../../features/webinars/types";
+import type { Webinar, WebinarPaymentStatus } from "../../features/webinars/types";
 import { formatManilaDateTime, formatSeatLabel } from "../../features/webinars/format";
 import { useAuth } from "../../store/AuthContext";
 
@@ -19,6 +19,8 @@ const WebinarDetailPage = () => {
   const [registrationStatus, setRegistrationStatus] = useState<"pending" | "verified" | null>(
     null,
   );
+  const [paymentRequired, setPaymentRequired] = useState<boolean | null>(null);
+  const [paymentStatus, setPaymentStatus] = useState<WebinarPaymentStatus | null>(null);
   const [submittedEmail, setSubmittedEmail] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -61,6 +63,8 @@ const WebinarDetailPage = () => {
             const targetEmail = status.email || user.email;
             setSubmittedEmailForWebinar(webinar.slug, targetEmail);
             if (active) setSubmittedEmail(targetEmail);
+            if (active) setPaymentRequired(status.payment_required);
+            if (active) setPaymentStatus(status.payment_status);
             if (status.status === "pending" || status.status === "verified") {
               setSubmittedStatusForWebinar(webinar.slug, status.status);
               if (active) setRegistrationStatus(status.status);
@@ -71,10 +75,14 @@ const WebinarDetailPage = () => {
             clearSubmittedEmailForWebinar(webinar.slug);
             if (active) setSubmittedEmail("");
             if (active) setRegistrationStatus(null);
+            if (active) setPaymentRequired(null);
+            if (active) setPaymentStatus(null);
           }
           return;
         } catch {
           if (active) setRegistrationStatus(null);
+          if (active) setPaymentRequired(null);
+          if (active) setPaymentStatus(null);
           return;
         }
       }
@@ -83,6 +91,8 @@ const WebinarDetailPage = () => {
       if (!rememberedEmail) {
         if (active) setSubmittedEmail("");
         if (active) setRegistrationStatus(null);
+        if (active) setPaymentRequired(null);
+        if (active) setPaymentStatus(null);
         return;
       }
 
@@ -98,6 +108,8 @@ const WebinarDetailPage = () => {
         const targetEmail = status.email || rememberedEmail;
         setSubmittedEmailForWebinar(webinar.slug, targetEmail);
         if (active) setSubmittedEmail(targetEmail);
+        if (active) setPaymentRequired(status.payment_required);
+        if (active) setPaymentStatus(status.payment_status);
         if (status.status === "pending" || status.status === "verified") {
           setSubmittedStatusForWebinar(webinar.slug, status.status);
           if (active) setRegistrationStatus(status.status);
@@ -108,6 +120,8 @@ const WebinarDetailPage = () => {
         clearSubmittedEmailForWebinar(webinar.slug);
         if (active) setSubmittedEmail("");
         if (active) setRegistrationStatus(null);
+        if (active) setPaymentRequired(null);
+        if (active) setPaymentStatus(null);
       }
     };
 
@@ -130,6 +144,10 @@ const WebinarDetailPage = () => {
       </main>
     );
   }
+
+  const isConfirmedRegistration =
+    registrationStatus === "verified" &&
+    (paymentRequired === false || paymentStatus === "paid");
 
   return (
     <main className="mx-auto mt-28 max-w-[900px] px-4 pb-20">
@@ -155,13 +173,20 @@ const WebinarDetailPage = () => {
       </div>
 
       <div className="mt-8 flex flex-wrap gap-4">
-        {registrationStatus === "verified" ? (
+        {isConfirmedRegistration ? (
           <span
             aria-disabled="true"
             className="cursor-not-allowed rounded bg-emerald-700 px-6 py-3 font-text text-sm font-bold uppercase tracking-[0.08em] text-white opacity-80"
           >
             Already registered
           </span>
+        ) : registrationStatus === "verified" ? (
+          <Link
+            to={`/webinars/${webinar.slug}/confirmed?email=${encodeURIComponent(submittedEmail)}`}
+            className="rounded bg-[#00a34a] px-6 py-3 font-text text-sm font-bold uppercase tracking-[0.08em] text-white transition hover:brightness-110"
+          >
+            Payment pending
+          </Link>
         ) : registrationStatus === "pending" ? (
           <Link
             to={`/webinars/${webinar.slug}/submitted?email=${encodeURIComponent(submittedEmail)}`}
