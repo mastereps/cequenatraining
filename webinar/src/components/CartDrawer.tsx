@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { useCart } from "../store/CartContext";
 import { useAuth } from "../store/AuthContext";
 import { formatPrice } from "../utils/formatPrice";
+import { CART_CHECKOUT_ENABLED } from "../config/commerce";
 
 const clampQuantity = (value: number) => Math.min(99, Math.max(1, value));
 
@@ -16,6 +17,8 @@ const CartDrawer = () => {
     removeItem,
   } = useCart();
   const { user } = useAuth();
+
+  if (!CART_CHECKOUT_ENABLED) return null;
 
   const currency = items[0]?.currency || "PHP";
   const checkoutHref = user ? "/checkout" : "/login?next=/checkout";

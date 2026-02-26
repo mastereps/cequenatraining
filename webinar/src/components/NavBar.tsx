@@ -8,6 +8,7 @@ import {
 import CompanyLogo from "../assets/images/cequena_training.png";
 import { useCart } from "../store/CartContext";
 import { useAuth } from "../store/AuthContext";
+import { CART_CHECKOUT_ENABLED } from "../config/commerce";
 const NavBar = () => {
   const links = [
     { label: "Home", href: "/" },
@@ -111,11 +112,30 @@ const NavBar = () => {
                 </Link>
               )}
             </li>
-            <li className="flex items-center p-4 text-slate-900 dark:text-slate-100">
+            {CART_CHECKOUT_ENABLED && (
+              <li className="flex items-center p-4 text-slate-900 dark:text-slate-100">
+                <button
+                  type="button"
+                  onClick={openCart}
+                  className="relative cursor-pointer inline-flex h-10 w-10 items-center justify-center rounded-full text-slate-900 transition hover:bg-black/5 dark:text-white dark:hover:bg-white/10"
+                  aria-label="Open cart"
+                >
+                  <AiOutlineShoppingCart size={20} />
+                  {cartCount > 0 && (
+                    <span className="absolute -right-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[#e3b323] px-1 text-xs font-semibold text-black">
+                      {cartCount}
+                    </span>
+                  )}
+                </button>
+              </li>
+            )}
+          </ul>
+          <div className="flex items-center gap-3 md:hidden">
+            {CART_CHECKOUT_ENABLED && (
               <button
                 type="button"
                 onClick={openCart}
-                className="relative cursor-pointer inline-flex h-10 w-10 items-center justify-center rounded-full text-slate-900 transition hover:bg-black/5 dark:text-white dark:hover:bg-white/10"
+                className="relative inline-flex h-10 w-10  cursor-pointer rounded-full text-slate-900 transition hover:bg-black/5 dark:text-white dark:hover:bg-white/10"
                 aria-label="Open cart"
               >
                 <AiOutlineShoppingCart size={20} />
@@ -125,22 +145,7 @@ const NavBar = () => {
                   </span>
                 )}
               </button>
-            </li>
-          </ul>
-          <div className="flex items-center gap-3 md:hidden">
-            <button
-              type="button"
-              onClick={openCart}
-              className="relative inline-flex h-10 w-10  cursor-pointer rounded-full text-slate-900 transition hover:bg-black/5 dark:text-white dark:hover:bg-white/10"
-              aria-label="Open cart"
-            >
-              <AiOutlineShoppingCart size={20} />
-              {cartCount > 0 && (
-                <span className="absolute -right-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[#e3b323] px-1 text-xs font-semibold text-black">
-                  {cartCount}
-                </span>
-              )}
-            </button>
+            )}
             <button
               type="button"
               className="cursor-pointer"

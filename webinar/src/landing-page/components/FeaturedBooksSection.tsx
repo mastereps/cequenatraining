@@ -13,6 +13,7 @@ import { getPurchaseOptions } from "../../utils/bookAvailability";
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
+import { CART_CHECKOUT_ENABLED } from "../../config/commerce";
 
 const FeaturedBooksSection = () => {
   const [books, setBooks] = useState<Book[]>([]);
@@ -154,6 +155,7 @@ const FeaturedBooksSection = () => {
               {(() => {
                 const purchaseOptions = getPurchaseOptions(book.slug);
                 const isInStock = book.in_stock !== false;
+                const primaryExternalUrl = purchaseOptions.externalLinks[0]?.url;
                 return (
                   <div className="bs_item relative max-w-56 cursor-pointer">
                     <div className="bs-img max-h-56 relative overflow-hidden">
@@ -185,32 +187,35 @@ const FeaturedBooksSection = () => {
                             <FiEye className="dark:text-black text-white" />
                           </button>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (!isInStock) return;
-                            if (purchaseOptions.internalAvailable) {
-                              addItem(book);
-                              return;
-                            }
-                            const url = purchaseOptions.externalLinks[0]?.url;
-                            if (url) {
-                              window.open(url, "_blank", "noopener,noreferrer");
-                            }
-                          }}
-                          disabled={!isInStock}
-                          className={`book_cta absolute inline-block px-8 py-3 font-text font-bold uppercase tracking-[0.08em] z-20 bottom-6 left-1/2 w-[95%] text-center transition-all duration-300 ${
-                            isInStock
-                              ? "cursor-pointer bg-lantern text-white hover:bg-lantern hover:text-white hover:shadow-[0_10px_30px_rgba(97,176,139,0.35)] dark:hover:bg-white dark:hover:text-black dark:hover:shadow-[0_0_0_.2rem_#fff]"
-                              : "cursor-not-allowed bg-slate-300 text-slate-500 dark:bg-slate-700 dark:text-slate-300"
-                          }`}
-                        >
-                          {isInStock
-                            ? purchaseOptions.internalAvailable
-                              ? "Get Copy"
-                              : "Buy Global"
-                            : "Out of stock"}
-                        </button>
+                        {isInStock && purchaseOptions.internalAvailable ? (
+                          <button
+                            type="button"
+                            onClick={() => addItem(book)}
+                            className="book_cta absolute inline-block px-8 py-3 font-text font-bold uppercase tracking-[0.08em] z-20 bottom-6 left-1/2 w-[95%] text-center transition-all duration-300 cursor-pointer bg-lantern text-white hover:bg-lantern hover:text-white hover:shadow-[0_10px_30px_rgba(97,176,139,0.35)] dark:hover:bg-white dark:hover:text-black dark:hover:shadow-[0_0_0_.2rem_#fff]"
+                          >
+                            Get Copy
+                          </button>
+                        ) : isInStock && primaryExternalUrl ? (
+                          <a
+                            href={primaryExternalUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="book_cta absolute inline-block px-8 py-3 font-text font-bold uppercase tracking-[0.08em] z-20 bottom-6 left-1/2 w-[95%] text-center transition-all duration-300 cursor-pointer bg-lantern text-white hover:bg-lantern hover:text-white hover:shadow-[0_10px_30px_rgba(97,176,139,0.35)] dark:hover:bg-white dark:hover:text-black dark:hover:shadow-[0_0_0_.2rem_#fff]"
+                          >
+                            Buy Global
+                          </a>
+                        ) : isInStock ? (
+                          <Link
+                            to={`/products/${book.slug}`}
+                            className="book_cta absolute inline-block px-8 py-3 font-text font-bold uppercase tracking-[0.08em] z-20 bottom-6 left-1/2 w-[95%] text-center transition-all duration-300 cursor-pointer bg-lantern text-white hover:bg-lantern hover:text-white hover:shadow-[0_10px_30px_rgba(97,176,139,0.35)] dark:hover:bg-white dark:hover:text-black dark:hover:shadow-[0_0_0_.2rem_#fff]"
+                          >
+                            {CART_CHECKOUT_ENABLED ? "Get Copy" : "View Options"}
+                          </Link>
+                        ) : (
+                          <span className="book_cta absolute inline-block px-8 py-3 font-text font-bold uppercase tracking-[0.08em] z-20 bottom-6 left-1/2 w-[95%] text-center transition-all duration-300 cursor-not-allowed bg-slate-300 text-slate-500 dark:bg-slate-700 dark:text-slate-300">
+                            Out of stock
+                          </span>
+                        )}
                       </div>
                     </div>
                     <div className="bs-description mt-3">

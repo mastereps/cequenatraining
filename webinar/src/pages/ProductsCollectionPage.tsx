@@ -4,9 +4,10 @@ import type Book from "../entities/Book";
 import { resolveBookImage } from "../utils/bookImages";
 import { formatPrice } from "../utils/formatPrice";
 import { getPurchaseOptions } from "../utils/bookAvailability";
+import { CART_CHECKOUT_ENABLED } from "../config/commerce";
 import HeroBanner from "../assets/images/books.jpg";
 
-type BookFilter = "all" | "in-stock" | "external-only";
+type BookFilter = "all" | "in-stock" | "external-only" | "international-only";
 type SortOption = "featured" | "price-low" | "price-high" | "title-asc";
 
 const ProductsCollectionPage = () => {
@@ -44,11 +45,15 @@ const ProductsCollectionPage = () => {
     const externalOnly = books.filter(
       (book) => !getPurchaseOptions(book.slug).internalAvailable,
     ).length;
+    const internationalOnly = books.filter(
+      (book) => getPurchaseOptions(book.slug).isInternationalOnly,
+    ).length;
 
     return {
       total: books.length,
       inStock,
       externalOnly,
+      internationalOnly,
     };
   }, [books]);
 
@@ -57,6 +62,8 @@ const ProductsCollectionPage = () => {
       if (filter === "in-stock") return book.in_stock !== false;
       if (filter === "external-only")
         return !getPurchaseOptions(book.slug).internalAvailable;
+      if (filter === "international-only")
+        return getPurchaseOptions(book.slug).isInternationalOnly;
       return true;
     });
 
@@ -131,6 +138,17 @@ const ProductsCollectionPage = () => {
             >
               External only ({stats.externalOnly})
             </button>
+            <button
+              type="button"
+              onClick={() => setFilter("international-only")}
+              className={`w-full rounded border px-3 py-2 text-left transition ${
+                filter === "international-only"
+                  ? "border-lantern text-lantern"
+                  : "border-slate-300 hover:border-slate-500 dark:border-slate-700 dark:hover:border-slate-500"
+              }`}
+            >
+              International only ({stats.internationalOnly})
+            </button>
           </div>
         </aside>
 
@@ -185,7 +203,7 @@ const ProductsCollectionPage = () => {
                       {formatPrice(book.price_cents, book.currency)}
                     </p>
                     <p className="mt-2 text-xs uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400">
-                      {purchaseOptions.internalAvailable
+                      {purchaseOptions.internalAvailable && CART_CHECKOUT_ENABLED
                         ? "Available in cart"
                         : purchaseOptions.note || "External purchase"}
                     </p>

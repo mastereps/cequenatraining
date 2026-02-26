@@ -9,6 +9,7 @@ import {
 import type Book from "../entities/Book";
 import { resolveBookImage } from "../utils/bookImages";
 import { getPurchaseOptions } from "../utils/bookAvailability";
+import { CART_CHECKOUT_ENABLED } from "../config/commerce";
 
 export type CartItem = {
   id: number;
@@ -77,6 +78,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const addItem = (book: Book, quantity = 1) => {
+    if (!CART_CHECKOUT_ENABLED) return;
     if (!book) return;
     if (book.in_stock === false) {
       showNotice("This book is currently out of stock.");
@@ -134,7 +136,10 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     setItems([]);
   };
 
-  const openCart = () => setIsOpen(true);
+  const openCart = () => {
+    if (!CART_CHECKOUT_ENABLED) return;
+    setIsOpen(true);
+  };
   const closeCart = () => setIsOpen(false);
 
   const value: CartContextValue = {

@@ -1,6 +1,6 @@
 // import LoginForm from "./components/LoginForm";
 import { useEffect } from "react";
-import { Route, Routes, useLocation } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import NavBar from "./components/NavBar";
 import CartDrawer from "./components/CartDrawer";
 import LandingPage from "./landing-page/LandingPage";
@@ -21,6 +21,7 @@ import WebinarRegisterPage from "./pages/webinars/WebinarRegisterPage";
 import WebinarSubmittedPage from "./pages/webinars/WebinarSubmittedPage";
 import VerifyPage from "./pages/webinars/VerifyPage";
 import WebinarConfirmedPage from "./pages/webinars/WebinarConfirmedPage";
+import { CART_CHECKOUT_ENABLED } from "./config/commerce";
 // import EventsList from "./components/EventList";
 // import SearchInput from "./components/SearchInput";
 // import { useState } from "react";
@@ -55,16 +56,40 @@ function App() {
         <Route path="/webinars/:slug/submitted" element={<WebinarSubmittedPage />} />
         <Route path="/verify" element={<VerifyPage />} />
         <Route path="/webinars/:slug/confirmed" element={<WebinarConfirmedPage />} />
-        <Route path="/cart" element={<CartPage />} />
-        <Route path="/checkout" element={<CheckoutPage />} />
-        <Route path="/checkout/success" element={<CheckoutSuccess />} />
-        <Route path="/checkout/cancel" element={<CheckoutCancel />} />
+        <Route
+          path="/cart"
+          element={
+            CART_CHECKOUT_ENABLED ? <CartPage /> : <Navigate to="/products" replace />
+          }
+        />
+        <Route
+          path="/checkout"
+          element={
+            CART_CHECKOUT_ENABLED ? <CheckoutPage /> : <Navigate to="/products" replace />
+          }
+        />
+        <Route
+          path="/checkout/success"
+          element={
+            CART_CHECKOUT_ENABLED ? (
+              <CheckoutSuccess />
+            ) : (
+              <Navigate to="/products" replace />
+            )
+          }
+        />
+        <Route
+          path="/checkout/cancel"
+          element={
+            CART_CHECKOUT_ENABLED ? <CheckoutCancel /> : <Navigate to="/products" replace />
+          }
+        />
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="*" element={<LandingPage />} />
       </Routes>
-      <CartDrawer />
+      {CART_CHECKOUT_ENABLED && <CartDrawer />}
       <Footer />
     </>
   );
