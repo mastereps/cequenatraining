@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import {
   getSubmittedEmailForWebinar,
+  getSubmittedPaymentMetaForWebinar,
   getSubmittedStatusForWebinar,
 } from "../registrationSession";
 import type { Webinar } from "../types";
@@ -14,8 +15,18 @@ interface WebinarCardProps {
 const WebinarCard = ({ webinar }: WebinarCardProps) => {
   const submittedEmail = getSubmittedEmailForWebinar(webinar.slug);
   const submittedStatus = getSubmittedStatusForWebinar(webinar.slug);
+  const paymentMeta = getSubmittedPaymentMetaForWebinar(webinar.slug);
   const priceCents = Number(webinar.price_cents ?? 0);
   const isPaid = priceCents > 0;
+  const paymentSettled =
+    paymentMeta.paymentRequired === false || paymentMeta.paymentStatus === "paid";
+  const paymentPending =
+    submittedStatus === "verified" &&
+    !paymentSettled &&
+    (paymentMeta.paymentRequired === true || isPaid);
+  const confirmedLink = submittedEmail
+    ? `/webinars/${webinar.slug}/confirmed?email=${encodeURIComponent(submittedEmail)}`
+    : `/webinars/${webinar.slug}/confirmed`;
 
   return (
     <article className="h-full rounded-lg border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
@@ -41,7 +52,14 @@ const WebinarCard = ({ webinar }: WebinarCardProps) => {
         </div>
 
         <div className="mt-6">
-          {submittedStatus === "verified" ? (
+          {paymentPending ? (
+            <Link
+              to={confirmedLink}
+              className="inline-block rounded bg-[#00a34a] px-5 py-3 font-text text-sm font-bold uppercase tracking-[0.08em] text-white transition hover:brightness-110"
+            >
+              Payment pending
+            </Link>
+          ) : submittedStatus === "verified" ? (
             <span
               aria-disabled="true"
               className="inline-block cursor-not-allowed rounded bg-emerald-700 px-5 py-3 font-text text-sm font-bold uppercase tracking-[0.08em] text-white opacity-80"

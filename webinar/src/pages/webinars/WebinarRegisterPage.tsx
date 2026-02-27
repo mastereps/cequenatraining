@@ -10,6 +10,7 @@ import {
   clearSubmittedEmailForWebinar,
   getSubmittedEmailForWebinar,
   setSubmittedEmailForWebinar,
+  setSubmittedPaymentMetaForWebinar,
   setSubmittedStatusForWebinar,
 } from "../../features/webinars/registrationSession";
 import type { Webinar } from "../../features/webinars/types";
@@ -49,6 +50,7 @@ const WebinarRegisterPage = () => {
           if (status.registered) {
             const targetEmail = status.email || user.email;
             setSubmittedEmailForWebinar(slug, targetEmail);
+            setSubmittedPaymentMetaForWebinar(slug, status.payment_required, status.payment_status);
             if (status.status === "pending" || status.status === "verified") {
               setSubmittedStatusForWebinar(slug, status.status);
             }
@@ -71,6 +73,7 @@ const WebinarRegisterPage = () => {
           if (status.registered) {
             const targetEmail = status.email || submittedEmail;
             setSubmittedEmailForWebinar(slug, targetEmail);
+            setSubmittedPaymentMetaForWebinar(slug, status.payment_required, status.payment_status);
             if (status.status === "pending" || status.status === "verified") {
               setSubmittedStatusForWebinar(slug, status.status);
             }
@@ -126,6 +129,7 @@ const WebinarRegisterPage = () => {
       });
       setSubmittedEmailForWebinar(slug, response.email);
       setSubmittedStatusForWebinar(slug, "pending");
+      setSubmittedPaymentMetaForWebinar(slug, null, null);
       navigate(`/webinars/${slug}/submitted?email=${encodeURIComponent(response.email)}`, {
         replace: true,
       });

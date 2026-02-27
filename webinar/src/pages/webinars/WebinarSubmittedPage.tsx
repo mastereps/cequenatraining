@@ -4,6 +4,7 @@ import { fetchRegistrationStatus, fetchWebinarBySlug } from "../../features/webi
 import {
   getSubmittedEmailForWebinar,
   setSubmittedEmailForWebinar,
+  setSubmittedPaymentMetaForWebinar,
   setSubmittedStatusForWebinar,
 } from "../../features/webinars/registrationSession";
 import type { Webinar } from "../../features/webinars/types";
@@ -26,6 +27,7 @@ const WebinarSubmittedPage = () => {
 
     setSubmittedEmailForWebinar(slug, submittedEmail);
     setSubmittedStatusForWebinar(slug, "pending");
+    setSubmittedPaymentMetaForWebinar(slug, null, null);
 
     let active = true;
     const load = async () => {
@@ -37,6 +39,11 @@ const WebinarSubmittedPage = () => {
           const targetEmail = registration.email || submittedEmail;
           setSubmittedEmailForWebinar(slug, targetEmail);
           setSubmittedStatusForWebinar(slug, "verified");
+          setSubmittedPaymentMetaForWebinar(
+            slug,
+            registration.payment_required,
+            registration.payment_status,
+          );
           navigate(`/webinars/${slug}/confirmed?email=${encodeURIComponent(targetEmail)}`, {
             replace: true,
           });

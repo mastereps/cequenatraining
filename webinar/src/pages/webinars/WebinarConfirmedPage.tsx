@@ -9,6 +9,7 @@ import {
 } from "../../features/webinars/api";
 import {
   setSubmittedEmailForWebinar,
+  setSubmittedPaymentMetaForWebinar,
   setSubmittedStatusForWebinar,
 } from "../../features/webinars/registrationSession";
 import type { RegistrationStatusResponse, Webinar } from "../../features/webinars/types";
@@ -82,6 +83,7 @@ const WebinarConfirmedPage = () => {
 
         if (!active) return;
         setRegistration(status);
+        setSubmittedPaymentMetaForWebinar(slug, status.payment_required, status.payment_status);
 
         if (status.email) {
           setEmail(status.email);

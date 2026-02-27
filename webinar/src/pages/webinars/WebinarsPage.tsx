@@ -5,6 +5,7 @@ import {
   clearSubmittedEmailForWebinar,
   getSubmittedEmailForWebinar,
   setSubmittedEmailForWebinar,
+  setSubmittedPaymentMetaForWebinar,
   setSubmittedStatusForWebinar,
 } from "../../features/webinars/registrationSession";
 import type { Webinar } from "../../features/webinars/types";
@@ -40,6 +41,11 @@ const WebinarsPage = () => {
             });
             if (status.registered) {
               setSubmittedEmailForWebinar(webinar.slug, status.email || user.email);
+              setSubmittedPaymentMetaForWebinar(
+                webinar.slug,
+                status.payment_required,
+                status.payment_status,
+              );
               if (status.status === "pending" || status.status === "verified") {
                 setSubmittedStatusForWebinar(webinar.slug, status.status);
               }
@@ -61,6 +67,11 @@ const WebinarsPage = () => {
             clearSubmittedEmailForWebinar(webinar.slug);
             return;
           }
+          setSubmittedPaymentMetaForWebinar(
+            webinar.slug,
+            status.payment_required,
+            status.payment_status,
+          );
           if (status.status === "pending" || status.status === "verified") {
             setSubmittedStatusForWebinar(webinar.slug, status.status);
           }

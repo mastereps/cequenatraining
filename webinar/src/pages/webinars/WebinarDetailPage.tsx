@@ -6,6 +6,7 @@ import {
   getSubmittedEmailForWebinar,
   getSubmittedStatusForWebinar,
   setSubmittedEmailForWebinar,
+  setSubmittedPaymentMetaForWebinar,
   setSubmittedStatusForWebinar,
 } from "../../features/webinars/registrationSession";
 import type { Webinar, WebinarPaymentStatus } from "../../features/webinars/types";
@@ -63,6 +64,11 @@ const WebinarDetailPage = () => {
           if (status.registered) {
             const targetEmail = status.email || user.email;
             setSubmittedEmailForWebinar(webinar.slug, targetEmail);
+            setSubmittedPaymentMetaForWebinar(
+              webinar.slug,
+              status.payment_required,
+              status.payment_status,
+            );
             if (active) setSubmittedEmail(targetEmail);
             if (active) setPaymentRequired(status.payment_required);
             if (active) setPaymentStatus(status.payment_status);
@@ -103,11 +109,18 @@ const WebinarDetailPage = () => {
           clearSubmittedEmailForWebinar(webinar.slug);
           if (active) setSubmittedEmail("");
           if (active) setRegistrationStatus(null);
+          if (active) setPaymentRequired(null);
+          if (active) setPaymentStatus(null);
           return;
         }
 
         const targetEmail = status.email || rememberedEmail;
         setSubmittedEmailForWebinar(webinar.slug, targetEmail);
+        setSubmittedPaymentMetaForWebinar(
+          webinar.slug,
+          status.payment_required,
+          status.payment_status,
+        );
         if (active) setSubmittedEmail(targetEmail);
         if (active) setPaymentRequired(status.payment_required);
         if (active) setPaymentStatus(status.payment_status);

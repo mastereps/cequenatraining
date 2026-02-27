@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { createWebinarPaymentSession, verifyWebinarToken } from "../../features/webinars/api";
 import {
   setSubmittedEmailForWebinar,
+  setSubmittedPaymentMetaForWebinar,
   setSubmittedStatusForWebinar,
 } from "../../features/webinars/registrationSession";
 import type { VerifyResponse } from "../../features/webinars/types";
@@ -32,6 +33,11 @@ const VerifyPage = () => {
         const response = await verifyWebinarToken(token);
         setSubmittedEmailForWebinar(response.webinar_slug, response.email);
         setSubmittedStatusForWebinar(response.webinar_slug, "verified");
+        setSubmittedPaymentMetaForWebinar(
+          response.webinar_slug,
+          response.payment_required,
+          response.payment_status,
+        );
         if (active) setResult(response);
       } catch (verifyError) {
         const message =
