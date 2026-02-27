@@ -16,6 +16,23 @@ import { formatManilaDateTime } from "../../features/webinars/format";
 import { useAuth } from "../../store/AuthContext";
 import { formatPrice } from "../../utils/formatPrice";
 
+const formatCooldown = (seconds: number) => {
+  const wholeSeconds = Math.max(0, Math.floor(seconds));
+  const minutes = Math.floor(wholeSeconds / 60);
+  const remainderSeconds = wholeSeconds % 60;
+  return `${minutes}:${String(remainderSeconds).padStart(2, "0")}`;
+};
+
+const getRetryAfterSeconds = (error: unknown) => {
+  if (!(error instanceof Error)) return 0;
+
+  const candidate = Number(
+    (error as Error & { retryAfterSeconds?: number }).retryAfterSeconds || 0,
+  );
+  if (!Number.isFinite(candidate) || candidate <= 0) return 0;
+  return Math.ceil(candidate);
+};
+
 const WebinarConfirmedPage = () => {
   const { slug = "" } = useParams();
   const [params] = useSearchParams();
@@ -25,6 +42,7 @@ const WebinarConfirmedPage = () => {
   const [email, setEmail] = useState(params.get("email") || "");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [resendCooldownSeconds, setResendCooldownSeconds] = useState(0);
   const [paying, setPaying] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -88,6 +106,18 @@ const WebinarConfirmedPage = () => {
     };
   }, [slug, email, user?.id]);
 
+  useEffect(() => {
+    if (resendCooldownSeconds <= 0) return;
+
+    const timer = window.setInterval(() => {
+      setResendCooldownSeconds((current) => (current > 0 ? current - 1 : 0));
+    }, 1000);
+
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, [resendCooldownSeconds]);
+
   const isVerified = registration?.status === "verified";
   const isPaid = Boolean(
     isVerified &&
@@ -117,6 +147,12 @@ const WebinarConfirmedPage = () => {
       setError("Confirmation email is available only after successful payment.");
       return;
     }
+    if (resendCooldownSeconds > 0) {
+      setError(
+        `Please wait ${formatCooldown(resendCooldownSeconds)} before requesting another email.`,
+      );
+      return;
+    }
 
     setSending(true);
     setError(null);
@@ -125,7 +161,12 @@ const WebinarConfirmedPage = () => {
     try {
       const response = await resendConfirmationEmail(slug, email);
       setMessage(response.message);
+      setResendCooldownSeconds(Math.max(0, Math.floor(response.next_allowed_in_seconds || 0)));
     } catch (resendError) {
+      const retryAfterSeconds = getRetryAfterSeconds(resendError);
+      if (retryAfterSeconds > 0) {
+        setResendCooldownSeconds(retryAfterSeconds);
+      }
       const resendMessage =
         resendError instanceof Error ? resendError.message : "Unable to resend email.";
       setError(resendMessage);
@@ -245,13 +286,22 @@ const WebinarConfirmedPage = () => {
 
           {error ? <p className="mt-3 text-sm text-red-600">{error}</p> : null}
           {message ? <p className="mt-3 text-sm text-green-700">{message}</p> : null}
+          {resendCooldownSeconds > 0 ? (
+            <p className="mt-2 text-xs text-slate-500 dark:text-slate-300">
+              You can resend again in {formatCooldown(resendCooldownSeconds)}.
+            </p>
+          ) : null}
 
           <button
             type="submit"
-            disabled={sending}
+            disabled={sending || resendCooldownSeconds > 0}
             className="mt-4 rounded bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-300"
           >
-            {sending ? "Sending..." : "Resend email"}
+            {sending
+              ? "Sending..."
+              : resendCooldownSeconds > 0
+                ? `Resend in ${formatCooldown(resendCooldownSeconds)}`
+                : "Resend email"}
           </button>
         </form>
       ) : (

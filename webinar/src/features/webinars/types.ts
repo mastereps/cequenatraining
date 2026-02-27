@@ -67,6 +67,7 @@ export interface ResendConfirmationResponse {
   webinar_slug: string;
   email: string;
   message: string;
+  next_allowed_in_seconds?: number;
 }
 
 export interface RegistrationStatusResponse {

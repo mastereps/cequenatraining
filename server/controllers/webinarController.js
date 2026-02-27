@@ -12,6 +12,15 @@ import { logger } from "../utils/logger.js";
 
 const handleError = (res, error, context) => {
   if (isAppError(error)) {
+    const retryAfterSeconds = Number(error?.details?.retry_after_seconds);
+    if (
+      error.status === 429 &&
+      Number.isFinite(retryAfterSeconds) &&
+      retryAfterSeconds > 0
+    ) {
+      res.setHeader("Retry-After", String(Math.ceil(retryAfterSeconds)));
+    }
+
     logger.warn("webinar_request_rejected", {
       context,
       status: error.status,

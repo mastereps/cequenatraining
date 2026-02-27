@@ -115,7 +115,22 @@ export const resendConfirmationEmail = async (
   });
 
   if (!res.ok) {
-    throw new Error(await getErrorMessage(res));
+    let payload: { error?: string; details?: { retry_after_seconds?: number } } | null = null;
+    try {
+      payload = (await res.json()) as { error?: string; details?: { retry_after_seconds?: number } };
+    } catch {
+      payload = null;
+    }
+
+    const message = payload?.error || `HTTP ${res.status}`;
+    const retryFromBody = Number(payload?.details?.retry_after_seconds || 0);
+    const retryFromHeader = Number(res.headers.get("Retry-After") || 0);
+    const retryAfterSeconds = Math.max(retryFromBody, retryFromHeader);
+    const error = new Error(message) as Error & { retryAfterSeconds?: number };
+    if (Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0) {
+      error.retryAfterSeconds = retryAfterSeconds;
+    }
+    throw error;
   }
 
   return (await res.json()) as ResendConfirmationResponse;

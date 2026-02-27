@@ -29,6 +29,9 @@ const toNonNegativeInteger = (value) => {
   return rounded >= 0 ? rounded : null;
 };
 
+const resendCooldownSeconds =
+  toNonNegativeInteger(process.env.WEBINAR_RESEND_COOLDOWN_SECONDS) ?? 300;
+
 const resolveWebinarPriceCents = (webinarRow) => {
   const fromDb = toNonNegativeInteger(webinarRow?.price_cents);
   if (fromDb !== null && fromDb > 0) return fromDb;
@@ -888,7 +891,9 @@ export const resendConfirmation = async ({ slug, email, idempotencyKey }) => {
     });
 
     if (!resendRateLimit.allowed) {
-      throw new AppError(429, "Too many resend attempts. Please retry later.");
+      throw new AppError(429, "Too many resend attempts. Please retry later.", {
+        retry_after_seconds: resendRateLimit.retryAfterSeconds,
+      });
     }
 
     const registrationResult = await client.query(
@@ -899,6 +904,7 @@ export const resendConfirmation = async ({ slug, email, idempotencyKey }) => {
           status,
           payment_required,
           payment_status,
+          last_confirmation_email_sent_at,
           zoom_registrant_join_url
         FROM webinar_registrations
         WHERE webinar_id = $1
@@ -919,6 +925,21 @@ export const resendConfirmation = async ({ slug, email, idempotencyKey }) => {
     }
     if (registration.payment_required && registration.payment_status !== "paid") {
       throw new AppError(409, "Payment is still pending for this registration.");
+    }
+    if (resendCooldownSeconds > 0 && registration.last_confirmation_email_sent_at) {
+      const lastSentAtMs = new Date(registration.last_confirmation_email_sent_at).getTime();
+      if (Number.isFinite(lastSentAtMs)) {
+        const elapsedSeconds = Math.floor((Date.now() - lastSentAtMs) / 1000);
+        if (elapsedSeconds < resendCooldownSeconds) {
+          throw new AppError(
+            429,
+            "Confirmation email was sent recently. Please wait before requesting again.",
+            {
+              retry_after_seconds: resendCooldownSeconds - elapsedSeconds,
+            },
+          );
+        }
+      }
     }
 
     const joinUrl = registration.zoom_registrant_join_url || webinar.zoom_join_url || null;
@@ -949,6 +970,7 @@ export const resendConfirmation = async ({ slug, email, idempotencyKey }) => {
       webinar_slug: webinar.slug,
       email: cleanEmail,
       message: "Confirmation email queued.",
+      next_allowed_in_seconds: resendCooldownSeconds,
     };
 
     await persistIdempotentResponse(client, {
