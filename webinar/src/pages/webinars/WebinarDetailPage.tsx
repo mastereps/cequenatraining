@@ -11,6 +11,7 @@ import {
 import type { Webinar, WebinarPaymentStatus } from "../../features/webinars/types";
 import { formatManilaDateTime, formatSeatLabel } from "../../features/webinars/format";
 import { useAuth } from "../../store/AuthContext";
+import { formatPrice } from "../../utils/formatPrice";
 
 const WebinarDetailPage = () => {
   const { slug = "" } = useParams();
@@ -148,6 +149,8 @@ const WebinarDetailPage = () => {
   const isConfirmedRegistration =
     registrationStatus === "verified" &&
     (paymentRequired === false || paymentStatus === "paid");
+  const priceCents = Number(webinar.price_cents ?? 0);
+  const isPaid = priceCents > 0;
 
   return (
     <main className="mx-auto mt-28 max-w-[900px] px-4 pb-20">
@@ -169,6 +172,9 @@ const WebinarDetailPage = () => {
         </p>
         <p>
           <strong>Availability:</strong> {formatSeatLabel(webinar.available_seats)}
+        </p>
+        <p>
+          <strong>Fee:</strong> {isPaid ? formatPrice(priceCents, webinar.currency) : "Free webinar"}
         </p>
       </div>
 

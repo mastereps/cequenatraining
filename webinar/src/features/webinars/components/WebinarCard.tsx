@@ -5,6 +5,7 @@ import {
 } from "../registrationSession";
 import type { Webinar } from "../types";
 import { formatManilaDateTime, formatSeatLabel } from "../format";
+import { formatPrice } from "../../../utils/formatPrice";
 
 interface WebinarCardProps {
   webinar: Webinar;
@@ -13,6 +14,8 @@ interface WebinarCardProps {
 const WebinarCard = ({ webinar }: WebinarCardProps) => {
   const submittedEmail = getSubmittedEmailForWebinar(webinar.slug);
   const submittedStatus = getSubmittedStatusForWebinar(webinar.slug);
+  const priceCents = Number(webinar.price_cents ?? 0);
+  const isPaid = priceCents > 0;
 
   return (
     <article className="h-full rounded-lg border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
@@ -28,6 +31,9 @@ const WebinarCard = ({ webinar }: WebinarCardProps) => {
         </p>
 
         <div className="mt-4 space-y-1 text-sm text-slate-600 dark:text-slate-300">
+          <p className="font-semibold text-lantern">
+            {isPaid ? formatPrice(priceCents, webinar.currency) : "Free webinar"}
+          </p>
           <p>{formatManilaDateTime(webinar.start_at)} (Asia/Manila)</p>
           <p className={webinar.is_full ? "text-red-600 dark:text-red-400" : ""}>
             {formatSeatLabel(webinar.available_seats)}
