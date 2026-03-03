@@ -13,6 +13,7 @@ import type { Webinar, WebinarPaymentStatus } from "../../features/webinars/type
 import { formatManilaDateTime, formatSeatLabel } from "../../features/webinars/format";
 import { useAuth } from "../../store/AuthContext";
 import { formatPrice } from "../../utils/formatPrice";
+import { WEBINAR_ORDERING_ENABLED } from "../../config/webinars";
 
 const WebinarDetailPage = () => {
   const { slug = "" } = useParams();
@@ -164,6 +165,7 @@ const WebinarDetailPage = () => {
     (paymentRequired === false || paymentStatus === "paid");
   const priceCents = Number(webinar.price_cents ?? 0);
   const isPaid = priceCents > 0;
+  const orderingDisabledForPaidWebinar = isPaid && !WEBINAR_ORDERING_ENABLED;
 
   return (
     <main className="mx-auto mt-28 max-w-[900px] px-4 pb-20">
@@ -199,6 +201,22 @@ const WebinarDetailPage = () => {
           >
             Already registered
           </span>
+        ) : orderingDisabledForPaidWebinar && !registrationStatus ? (
+          <span
+            aria-disabled="true"
+            className="cursor-not-allowed rounded bg-slate-500 px-6 py-3 font-text text-sm font-bold uppercase tracking-[0.08em] text-white opacity-80"
+          >
+            Ordering unavailable
+          </span>
+        ) : registrationStatus === "verified" &&
+          paymentRequired !== false &&
+          !WEBINAR_ORDERING_ENABLED ? (
+          <span
+            aria-disabled="true"
+            className="cursor-not-allowed rounded bg-slate-500 px-6 py-3 font-text text-sm font-bold uppercase tracking-[0.08em] text-white opacity-80"
+          >
+            Payment unavailable
+          </span>
         ) : registrationStatus === "verified" ? (
           <Link
             to={`/webinars/${webinar.slug}/confirmed?email=${encodeURIComponent(submittedEmail)}`}
@@ -228,6 +246,11 @@ const WebinarDetailPage = () => {
           Back to webinars
         </Link>
       </div>
+      {orderingDisabledForPaidWebinar ? (
+        <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">
+          Webinar ordering is temporarily unavailable. Please check back later.
+        </p>
+      ) : null}
     </main>
   );
 };

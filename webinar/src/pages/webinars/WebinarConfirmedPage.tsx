@@ -16,6 +16,7 @@ import type { RegistrationStatusResponse, Webinar } from "../../features/webinar
 import { formatManilaDateTime } from "../../features/webinars/format";
 import { useAuth } from "../../store/AuthContext";
 import { formatPrice } from "../../utils/formatPrice";
+import { WEBINAR_ORDERING_ENABLED } from "../../config/webinars";
 
 const formatCooldown = (seconds: number) => {
   const wholeSeconds = Math.max(0, Math.floor(seconds));
@@ -126,6 +127,9 @@ const WebinarConfirmedPage = () => {
       (registration?.payment_required === false || registration?.payment_status === "paid"),
   );
   const paymentPending = Boolean(isVerified && !isPaid);
+  const orderingDisabledForPaidWebinar = Boolean(
+    webinar && Number(webinar.price_cents ?? 0) > 0 && !WEBINAR_ORDERING_ENABLED,
+  );
 
   const paymentAttempt = useMemo(() => params.get("payment"), [params]);
   const statusTitle = isPaid
@@ -179,6 +183,10 @@ const WebinarConfirmedPage = () => {
 
   const handlePayNow = async () => {
     if (!paymentPending || paying) return;
+    if (orderingDisabledForPaidWebinar) {
+      setError("Webinar ordering is temporarily unavailable.");
+      return;
+    }
 
     setPaying(true);
     setError(null);
@@ -256,11 +264,16 @@ const WebinarConfirmedPage = () => {
             <button
               type="button"
               onClick={handlePayNow}
-              disabled={paying || !paymentPending}
+              disabled={paying || !paymentPending || orderingDisabledForPaidWebinar}
               className="rounded bg-[#00a34a] px-5 py-3 text-sm font-semibold uppercase tracking-[0.08em] text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {paying ? "Redirecting..." : "Pay now"}
+              {orderingDisabledForPaidWebinar ? "Payment unavailable" : paying ? "Redirecting..." : "Pay now"}
             </button>
+            {orderingDisabledForPaidWebinar ? (
+              <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+                Webinar ordering is temporarily unavailable. Please check back later.
+              </p>
+            ) : null}
           </div>
         ) : null}
       </section>

@@ -22,6 +22,7 @@ import WebinarSubmittedPage from "./pages/webinars/WebinarSubmittedPage";
 import VerifyPage from "./pages/webinars/VerifyPage";
 import WebinarConfirmedPage from "./pages/webinars/WebinarConfirmedPage";
 import { CART_CHECKOUT_ENABLED } from "./config/commerce";
+import { WEBINAR_ORDERING_ENABLED } from "./config/webinars";
 // import EventsList from "./components/EventList";
 // import SearchInput from "./components/SearchInput";
 // import { useState } from "react";
@@ -52,7 +53,16 @@ function App() {
         <Route path="/products/:slug" element={<BookDetails />} />
         <Route path="/webinars" element={<WebinarsPage />} />
         <Route path="/webinars/:slug" element={<WebinarDetailPage />} />
-        <Route path="/webinars/:slug/register" element={<WebinarRegisterPage />} />
+        <Route
+          path="/webinars/:slug/register"
+          element={
+            WEBINAR_ORDERING_ENABLED ? (
+              <WebinarRegisterPage />
+            ) : (
+              <Navigate to="/webinars" replace />
+            )
+          }
+        />
         <Route path="/webinars/:slug/submitted" element={<WebinarSubmittedPage />} />
         <Route path="/verify" element={<VerifyPage />} />
         <Route path="/webinars/:slug/confirmed" element={<WebinarConfirmedPage />} />

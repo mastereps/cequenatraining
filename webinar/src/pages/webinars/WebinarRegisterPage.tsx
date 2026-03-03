@@ -15,6 +15,7 @@ import {
 } from "../../features/webinars/registrationSession";
 import type { Webinar } from "../../features/webinars/types";
 import { useAuth } from "../../store/AuthContext";
+import { WEBINAR_ORDERING_ENABLED } from "../../config/webinars";
 
 const WebinarRegisterPage = () => {
   const { slug = "" } = useParams();
@@ -113,6 +114,10 @@ const WebinarRegisterPage = () => {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (submitting) return;
+    if (webinar && Number(webinar.price_cents ?? 0) > 0 && !WEBINAR_ORDERING_ENABLED) {
+      setError("Webinar ordering is temporarily unavailable.");
+      return;
+    }
 
     setSubmitting(true);
     setError(null);
@@ -155,6 +160,9 @@ const WebinarRegisterPage = () => {
       </main>
     );
   }
+
+  const orderingDisabledForPaidWebinar =
+    Number(webinar.price_cents ?? 0) > 0 && !WEBINAR_ORDERING_ENABLED;
 
   return (
     <main className="mx-auto mt-28 max-w-[720px] px-4 pb-20">
@@ -227,11 +235,20 @@ const WebinarRegisterPage = () => {
 
         <button
           type="submit"
-          disabled={submitting}
+          disabled={submitting || orderingDisabledForPaidWebinar}
           className="rounded bg-lantern px-6 py-3 font-text text-sm font-bold uppercase tracking-[0.08em] text-white transition hover:bg-lantern/90 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {submitting ? "Submitting..." : "Reserve my spot"}
+          {orderingDisabledForPaidWebinar
+            ? "Ordering unavailable"
+            : submitting
+              ? "Submitting..."
+              : "Reserve my spot"}
         </button>
+        {orderingDisabledForPaidWebinar ? (
+          <p className="text-sm text-slate-600 dark:text-slate-300">
+            Webinar ordering is temporarily unavailable. Please try again later.
+          </p>
+        ) : null}
 
         <p className="text-sm text-slate-500 dark:text-slate-300">
           After submitting, check your email and verify your registration to confirm.

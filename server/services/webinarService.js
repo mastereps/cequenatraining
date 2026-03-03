@@ -29,6 +29,12 @@ const toNonNegativeInteger = (value) => {
   return rounded >= 0 ? rounded : null;
 };
 
+const webinarOrderingEnabled = !["0", "false", "no", "off"].includes(
+  String(process.env.WEBINAR_ORDERING_ENABLED || "false")
+    .trim()
+    .toLowerCase(),
+);
+
 const resendCooldownSeconds =
   toNonNegativeInteger(process.env.WEBINAR_RESEND_COOLDOWN_SECONDS) ?? 300;
 
@@ -338,6 +344,9 @@ export const registerForWebinar = async ({ slug, fullName, email, userId, option
 
     const webinarPriceCents = resolveWebinarPriceCents(webinar);
     const paymentRequired = webinarPriceCents > 0;
+    if (paymentRequired && !webinarOrderingEnabled) {
+      throw new AppError(503, "Webinar ordering is temporarily unavailable.");
+    }
     const initialPaymentStatus = paymentRequired ? "unpaid" : "paid";
 
     const registerRateLimit = await assertWithinRateLimit(client, {
@@ -725,6 +734,10 @@ export const createWebinarPaymentSession = async ({ slug, email, userId }) => {
         checkout_id: null,
         message: "Payment is not required for this webinar.",
       };
+    }
+
+    if (!webinarOrderingEnabled) {
+      throw new AppError(503, "Webinar ordering is temporarily unavailable.");
     }
 
     if (registration.payment_status === "paid") {
