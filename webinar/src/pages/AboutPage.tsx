@@ -1,12 +1,14 @@
 import { Link } from "react-router-dom";
-import MariaLike from "../assets/images/MariaLike.jpg";
-import MariaK from "../assets/images/MariaK.jpg";
-import MariaGroup from "../assets/images/MariaGroup.jpg";
 import HeroBanner from "../assets/images/hero-webinar.jpg";
+import InternationalPhoto from "../assets/images/001_international.png";
+import GroupPhoto from "../assets/images/002_group.png";
+import InternationalEventPhoto from "../assets/images/006_ggroup.png";
+import ProfilePhoto from "../assets/images/003_international1.png";
+import ZoomPhoto from "../assets/images/005_zoom.png";
 
 const AboutPage = () => {
   return (
-    <section className="mt-24 bg-white pb-20 dark:bg-black">
+    <section className="mt-24 bg-black pb-20">
       <div className="relative h-[350px] w-full overflow-hidden border-b border-white/10 sm:h-[40vh] sm:min-h-[320px] sm:max-h-[420px]">
         <img
           src={HeroBanner}
@@ -31,74 +33,180 @@ const AboutPage = () => {
         </div>
       </div>
 
-      <div className="mx-auto mt-10 max-w-[1140px] overflow-hidden rounded-sm border border-slate-200 bg-white text-slate-900 dark:border-white/10 dark:bg-[#141619] dark:text-white">
-        <div className="relative h-[320px] w-full overflow-hidden sm:h-[420px]">
-          <img
-            src={MariaLike}
-            alt="Maria Cequena portrait"
-            className="h-full w-full object-cover"
-          />
-          <div className="absolute inset-0 bg-black/45" />
-          <div className="absolute bottom-8 left-8 right-8 text-center sm:left-16 sm:right-16">
-            <p className="mb-3 font-text text-xs uppercase tracking-[0.5em] text-white">
-              Author
-            </p>
-            <h1 className="text-white font-heading text-4xl uppercase sm:text-6xl">
-              Maria B. Cequena
-            </h1>
+      <div className="bg-black text-white">
+        <div className="mx-auto max-w-[1280px] px-4 py-12 sm:px-6 sm:py-16 lg:px-8 lg:py-20">
+          <div className="grid gap-10 lg:grid-cols-[minmax(0,1.05fr)_minmax(340px,0.85fr)] lg:gap-14">
+            <div className="max-w-3xl">
+              <p className="text-sm uppercase tracking-[0.28em] text-white/55">
+                About Maria
+              </p>
+
+              <div className="mt-6 inline-block bg-lantern px-5 py-4 sm:px-8 sm:py-5">
+                <h2 className="font-heading text-4xl uppercase leading-[0.95] text-black sm:text-6xl">
+                  Maria B. Cequena
+                </h2>
+              </div>
+
+              <div className="mt-10 space-y-8 text-lg leading-relaxed text-white/82 sm:text-[1.4rem]">
+                <p>
+                  Maria B. Cequena has spent more than three decades helping
+                  teachers turn research into classroom practice. Her work sits
+                  at the intersection of literacy, ESL, curriculum development,
+                  and instructional coaching built for real learners and real
+                  school settings.
+                </p>
+                <p>
+                  Through practical webinars, author talks, and educator
+                  training, she equips teachers with strategies they can use
+                  immediately. Her sessions are known for being direct,
+                  structured, and deeply connected to the everyday demands of
+                  teaching diverse learners.
+                </p>
+                <p>
+                  Maria&apos;s books and professional learning programs reflect
+                  a consistent focus on clarity, reflection, and classroom
+                  impact. She helps educators strengthen reading instruction,
+                  support language development, and build confidence in the
+                  decisions they make for students.
+                </p>
+                <p>
+                  The result is a body of work shaped by partnership,
+                  mentorship, and a shared commitment to better learning. Maria
+                  continues to champion practical professional development that
+                  respects teachers&apos; time while raising the quality of
+                  instruction.
+                </p>
+              </div>
+            </div>
+
+            <div className="relative overflow-hidden border border-white/10 bg-white/5">
+              <img
+                src={ProfilePhoto}
+                alt="Maria B. Cequena portrait"
+                className="h-full min-h-[520px] w-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/15 to-transparent" />
+              <div className="absolute inset-x-0 bottom-0 p-6 sm:p-8">
+                <p className="font-text text-xs uppercase tracking-[0.35em] text-lantern">
+                  Educator / Author / Speaker
+                </p>
+                <p className="mt-3 max-w-md text-base leading-relaxed text-white/80">
+                  Practical learning experiences for teachers who want research
+                  to show up clearly in the classroom.
+                </p>
+              </div>
+            </div>
           </div>
-        </div>
 
-        <div className="px-6 py-12 sm:px-10 md:px-14">
-          <p className="text-center font-heading text-3xl uppercase leading-relaxed text-slate-800 dark:text-slate-200 sm:text-4xl">
-            Empowering teachers through practical webinars and books that bring
-            research into real classrooms.
-          </p>
-
-          <div className="mt-12 overflow-hidden rounded-sm border border-slate-200 dark:border-white/10">
-            <img
-              src={MariaGroup}
-              alt="Maria Cequena with educators"
-              className="h-auto w-full object-cover"
-            />
+          <div className="mt-14 grid gap-4 md:grid-cols-3">
+            <div className="border border-white/10 bg-white/[0.03] p-6">
+              <p className="font-heading text-4xl uppercase text-lantern">
+                30+
+              </p>
+              <p className="mt-3 text-sm uppercase tracking-[0.18em] text-white/55">
+                Years in education
+              </p>
+              <p className="mt-4 text-base leading-relaxed text-white/72">
+                Teaching, research, curriculum development, and professional
+                learning shaped by classroom realities.
+              </p>
+            </div>
+            <div className="border border-white/10 bg-white/[0.03] p-6">
+              <p className="font-heading text-4xl uppercase text-lantern">
+                Literacy
+              </p>
+              <p className="mt-3 text-sm uppercase tracking-[0.18em] text-white/55">
+                Core focus areas
+              </p>
+              <p className="mt-4 text-base leading-relaxed text-white/72">
+                Reading instruction, ESL support, and reflective strategies that
+                help teachers meet learners where they are.
+              </p>
+            </div>
+            <div className="border border-white/10 bg-white/[0.03] p-6">
+              <p className="font-heading text-4xl uppercase text-lantern">
+                Books + Webinars
+              </p>
+              <p className="mt-3 text-sm uppercase tracking-[0.18em] text-white/55">
+                Practical professional learning
+              </p>
+              <p className="mt-4 text-base leading-relaxed text-white/72">
+                Resources designed to make ideas usable, sustainable, and worth
+                bringing back into the next school day.
+              </p>
+            </div>
           </div>
 
-          <div className="mt-10 grid gap-8 text-lg leading-relaxed text-slate-700 dark:text-slate-200 md:grid-cols-2">
-            <p>
-              With over 30 years in education, Maria has focused her work on
-              literacy, ESL, and curriculum development. Her training style is
-              practical, direct, and designed for teachers who need strategies
-              they can use immediately.
-            </p>
-            <p>
-              Through webinars and published books, she helps schools and
-              educators strengthen classroom practice, improve student outcomes,
-              and build confidence in teaching diverse learners.
-            </p>
+          <div className="mt-20 grid gap-5 md:grid-cols-3">
+            <div className="overflow-hidden border border-white/10">
+              <img
+                src={GroupPhoto}
+                alt="Maria Cequena with fellow educators"
+                className="h-[220px] w-full object-cover"
+              />
+            </div>
+            <div className="overflow-hidden border border-white/10">
+              <img
+                src={InternationalPhoto}
+                alt="Maria Cequena at an international event"
+                className="h-[220px]   object-[60%_20%] w-full object-cover"
+              />
+            </div>
+            <div className="overflow-hidden border border-white/10">
+              <img
+                src={InternationalEventPhoto}
+                alt="Maria Cequena during a professional engagement"
+                className="h-[220px]  object-[50%_50%] w-full object-cover"
+              />
+            </div>
           </div>
 
-          <p className="mt-10 text-center font-heading text-3xl uppercase leading-relaxed text-slate-800 dark:text-slate-200 sm:text-4xl">
-            We grow together through partnership, mentorship, and a shared
-            commitment to better learning.
-          </p>
+          <div className="mt-20 grid gap-10 lg:grid-cols-[minmax(0,0.78fr)_minmax(0,1fr)] lg:items-center">
+            <div className="overflow-hidden border border-white/10">
+              <img
+                src={ZoomPhoto}
+                alt="Maria Cequena leading an online session"
+                className="h-full min-h-[320px] w-full object-cover"
+              />
+            </div>
 
-          <div className="mt-12 overflow-hidden rounded-sm border border-slate-200 dark:border-white/10">
-            <img
-              src={MariaK}
-              alt="Maria Cequena speaking at an event"
-              className="h-[420px] w-full object-cover object-[50%_35%] sm:h-[500px]"
-            />
-          </div>
+            <div>
+              <p className="text-sm uppercase tracking-[0.28em] text-white/55">
+                Her Approach
+              </p>
+              <h3 className="mt-5 max-w-2xl font-heading text-3xl uppercase leading-tight text-white sm:text-5xl">
+                Research-backed ideas, translated into teaching moves that feel
+                usable right away.
+              </h3>
+              <p className="mt-6 max-w-2xl text-lg leading-relaxed text-white/78">
+                Maria builds learning experiences that respect the pace of
+                teachers while still pushing toward better instruction. Her work
+                is rooted in reflection, collaboration, and the belief that
+                strong professional development should leave educators with
+                clarity, not overload.
+              </p>
 
-          <div className="mt-12">
-            <h2 className="font-heading text-4xl uppercase">Core Values</h2>
-            <ul className="mt-6 list-disc space-y-3 pl-6 text-lg text-slate-700 dark:text-slate-200">
-              <li>Excellence in teaching and learning</li>
-              <li>Integrity in research and practice</li>
-              <li>Practical innovation for modern classrooms</li>
-              <li>Supportive collaboration with educators</li>
-              <li>Service centered on student success</li>
-            </ul>
+              <div className="mt-8 grid gap-4 sm:grid-cols-2">
+                <div className="border border-white/10 p-5">
+                  <p className="font-text text-xs uppercase tracking-[0.22em] text-lantern">
+                    What educators gain
+                  </p>
+                  <p className="mt-3 text-base leading-relaxed text-white/75">
+                    Clear frameworks, practical strategies, and actionable next
+                    steps for literacy and language instruction.
+                  </p>
+                </div>
+                <div className="border border-white/10 p-5">
+                  <p className="font-text text-xs uppercase tracking-[0.22em] text-lantern">
+                    What drives the work
+                  </p>
+                  <p className="mt-3 text-base leading-relaxed text-white/75">
+                    Partnership, mentorship, and better outcomes for students
+                    through better-supported teachers.
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
