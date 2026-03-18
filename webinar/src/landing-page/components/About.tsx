@@ -1,4 +1,4 @@
-import MariaPhoto from "../../assets/images/maria_cequena_real.png";
+import MariaPhoto from "../../assets/images/maria_ophoto.jpg";
 
 const About = () => {
   return (
