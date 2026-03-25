@@ -15,7 +15,6 @@ import {
 } from "../../features/webinars/registrationSession";
 import type { Webinar } from "../../features/webinars/types";
 import { useAuth } from "../../store/AuthContext";
-import { WEBINAR_ORDERING_ENABLED } from "../../config/webinars";
 
 const WebinarRegisterPage = () => {
   const { slug = "" } = useParams();
@@ -114,10 +113,6 @@ const WebinarRegisterPage = () => {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (submitting) return;
-    if (webinar && Number(webinar.price_cents ?? 0) > 0 && !WEBINAR_ORDERING_ENABLED) {
-      setError("Webinar ordering is temporarily unavailable.");
-      return;
-    }
 
     setSubmitting(true);
     setError(null);
@@ -161,8 +156,7 @@ const WebinarRegisterPage = () => {
     );
   }
 
-  const orderingDisabledForPaidWebinar =
-    Number(webinar.price_cents ?? 0) > 0 && !WEBINAR_ORDERING_ENABLED;
+  const isPaidWebinar = Number(webinar.price_cents ?? 0) > 0;
 
   return (
     <main className="mx-auto mt-28 max-w-[720px] px-4 pb-20">
@@ -233,22 +227,20 @@ const WebinarRegisterPage = () => {
 
         {error ? <p className="text-sm text-red-600">{error}</p> : null}
 
-        <button
-          type="submit"
-          disabled={submitting || orderingDisabledForPaidWebinar}
-          className="rounded bg-lantern px-6 py-3 font-text text-sm font-bold uppercase tracking-[0.08em] text-white transition hover:bg-lantern/90 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {orderingDisabledForPaidWebinar
-            ? "Ordering unavailable"
-            : submitting
-              ? "Submitting..."
-              : "Reserve my spot"}
-        </button>
-        {orderingDisabledForPaidWebinar ? (
+        {isPaidWebinar ? (
           <p className="text-sm text-slate-600 dark:text-slate-300">
-            Webinar ordering is temporarily unavailable. Please try again later.
+            After verifying your email, you will be shown the GCash QR code and asked to submit
+            your payment details for manual review.
           </p>
         ) : null}
+
+        <button
+          type="submit"
+          disabled={submitting}
+          className="rounded bg-lantern px-6 py-3 font-text text-sm font-bold uppercase tracking-[0.08em] text-white transition hover:bg-lantern/90 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {submitting ? "Submitting..." : "Reserve my spot"}
+        </button>
 
         <p className="text-sm text-slate-500 dark:text-slate-300">
           After submitting, check your email and verify your registration to confirm.

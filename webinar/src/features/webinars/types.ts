@@ -1,9 +1,22 @@
 export type WebinarPaymentStatus =
   | "unpaid"
-  | "payment_pending"
+  | "proof_submitted"
   | "paid"
-  | "failed"
+  | "rejected"
   | "refunded";
+
+export interface WebinarPaymentProof {
+  id: string;
+  reference_number: string;
+  payer_name: string;
+  payer_gcash_number: string;
+  amount_cents: number | null;
+  status: "submitted" | "approved" | "rejected";
+  review_notes: string | null;
+  submitted_at: string | null;
+  reviewed_at: string | null;
+  reviewed_by: number | null;
+}
 
 export interface Webinar {
   id: string;
@@ -22,6 +35,10 @@ export interface Webinar {
   is_full: boolean;
   is_published: boolean;
   registration_open: boolean;
+  poster_image_url: string | null;
+  payment_qr_image_url: string | null;
+  payment_instructions: string | null;
+  join_link_delivery_mode: "auto" | "manual";
 }
 
 export interface WebinarListResponse {
@@ -58,6 +75,7 @@ export interface VerifyResponse {
   payment_required: boolean;
   payment_status: WebinarPaymentStatus;
   paid_at: string | null;
+  zoom_link_sent_at: string | null;
   confirmation_ready: boolean;
   message: string;
 }
@@ -80,6 +98,8 @@ export interface RegistrationStatusResponse {
   payment_required: boolean | null;
   payment_status: WebinarPaymentStatus | null;
   paid_at: string | null;
+  payment_proof: WebinarPaymentProof | null;
+  zoom_link_sent_at: string | null;
   confirmation_ready: boolean;
 }
 
@@ -100,5 +120,56 @@ export interface WebinarPaymentSessionResponse {
   currency: string;
   checkout_url: string | null;
   checkout_id: string | null;
+  message: string;
+}
+
+export interface WebinarPaymentProofPayload {
+  email?: string;
+  user_id?: number | null;
+  reference_number: string;
+  payer_name: string;
+  payer_gcash_number: string;
+}
+
+export interface WebinarPaymentProofResponse {
+  ok: boolean;
+  webinar_slug: string;
+  email: string;
+  payment_status: WebinarPaymentStatus;
+  proof: WebinarPaymentProof;
+  message: string;
+}
+
+export interface WebinarAdminPaymentProof {
+  registration_id: string;
+  email: string;
+  full_name: string;
+  registration_status: "pending" | "verified" | "cancelled";
+  payment_status: WebinarPaymentStatus;
+  paid_at: string | null;
+  zoom_link_sent_at: string | null;
+  payment_proof: WebinarPaymentProof & {
+    reviewed_by_name?: string | null;
+  };
+}
+
+export interface WebinarAdminPaymentProofListResponse {
+  ok: boolean;
+  data: WebinarAdminPaymentProof[];
+  count: number;
+}
+
+export interface WebinarPaymentReviewResponse {
+  ok: boolean;
+  webinar_slug: string;
+  registration_id: string;
+  payment_status: WebinarPaymentStatus;
+  message: string;
+}
+
+export interface WebinarSendZoomLinksResponse {
+  ok: boolean;
+  webinar_slug: string;
+  sent_count: number;
   message: string;
 }

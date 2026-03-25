@@ -177,6 +177,7 @@ const resolveWebinarPaymentSessionForEvent = async (client, context) => {
           wr.payment_status,
           wr.paid_at,
           wr.last_confirmation_email_sent_at,
+          wr.zoom_link_sent_at,
           wr.email,
           wr.full_name,
           wr.zoom_registrant_join_url,
@@ -184,7 +185,8 @@ const resolveWebinarPaymentSessionForEvent = async (client, context) => {
           w.title,
           w.start_at,
           w.timezone,
-          w.zoom_join_url
+          w.zoom_join_url,
+          w.join_link_delivery_mode
         FROM webinar_payment_sessions wps
         JOIN webinar_registrations wr ON wr.id = wps.registration_id
         JOIN webinars w ON w.id = wr.webinar_id
@@ -216,6 +218,7 @@ const resolveWebinarPaymentSessionForEvent = async (client, context) => {
         wr.payment_status,
         wr.paid_at,
         wr.last_confirmation_email_sent_at,
+        wr.zoom_link_sent_at,
         wr.email,
         wr.full_name,
         wr.zoom_registrant_join_url,
@@ -223,7 +226,8 @@ const resolveWebinarPaymentSessionForEvent = async (client, context) => {
         w.title,
         w.start_at,
         w.timezone,
-        w.zoom_join_url
+        w.zoom_join_url,
+        w.join_link_delivery_mode
       FROM webinar_payment_sessions wps
       JOIN webinar_registrations wr ON wr.id = wps.registration_id
       JOIN webinars w ON w.id = wr.webinar_id
@@ -281,7 +285,7 @@ const markWebinarRegistrationFailed = async (client, registrationId) => {
       UPDATE webinar_registrations
       SET payment_status = CASE
             WHEN payment_status = 'paid' THEN payment_status
-            ELSE 'failed'
+            ELSE 'rejected'
           END
       WHERE id = $1
         AND payment_required = true
@@ -320,13 +324,16 @@ const markWebinarRegistrationRefundFailed = async (client, registrationId) => {
 const enqueueWebinarConfirmationIfNeeded = async (client, registration) => {
   if (registration.registration_status !== "verified") return false;
   if (!registration.payment_required) return false;
-  if (registration.last_confirmation_email_sent_at) return false;
 
   const joinUrl = registration.zoom_registrant_join_url || registration.zoom_join_url || null;
+  const joinLinkDeliveryMode =
+    String(registration.join_link_delivery_mode || "auto").trim().toLowerCase() === "manual"
+      ? "manual"
+      : "auto";
 
   await enqueueEmail(client, {
     toEmail: registration.email,
-    templateKey: "webinar.confirmed",
+    templateKey: joinLinkDeliveryMode === "auto" && joinUrl ? "webinar.zoom_link" : "webinar.payment_approved",
     payload: {
       full_name: registration.full_name,
       webinar_title: registration.title,
@@ -337,14 +344,18 @@ const enqueueWebinarConfirmationIfNeeded = async (client, registration) => {
     },
   });
 
-  await client.query(
-    `
-      UPDATE webinar_registrations
-      SET last_confirmation_email_sent_at = COALESCE(last_confirmation_email_sent_at, NOW())
-      WHERE id = $1
-    `,
-    [registration.registration_id],
-  );
+  if (joinLinkDeliveryMode === "auto" && joinUrl) {
+    await client.query(
+      `
+        UPDATE webinar_registrations
+        SET
+          last_confirmation_email_sent_at = COALESCE(last_confirmation_email_sent_at, NOW()),
+          zoom_link_sent_at = COALESCE(zoom_link_sent_at, NOW())
+        WHERE id = $1
+      `,
+      [registration.registration_id],
+    );
+  }
 
   return true;
 };

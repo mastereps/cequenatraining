@@ -11,6 +11,8 @@ import type { Webinar } from "../../features/webinars/types";
 import WebinarCard from "../../features/webinars/components/WebinarCard";
 import { useAuth } from "../../store/AuthContext";
 
+// TODO: When there is no webinar present just display no webinars yet or something like that and don't completely remove the entire section
+
 const LatestEvents = () => {
   const { user } = useAuth();
   const [webinars, setWebinars] = useState<Webinar[]>([]);

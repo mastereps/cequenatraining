@@ -124,28 +124,22 @@ input[type="number"] {
 }
 
 /* Swiper custom-nav */
-.custom-nav {
-  position: absolute;
-  inset: 0;
+.book-slider-controls {
+  margin-top: 1.5rem;
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
-  pointer-events: none; /* so only buttons capture clicks */
-  padding: 0 18px; /* adjust to taste */
-  z-index: 10;
+  gap: 1rem;
+  flex-wrap: nowrap;
+  width: fit-content;
+  margin-inline: auto;
 }
 
-.custom-nav .my-prev,
-.custom-nav .my-next {
+.book-slider-controls .my-prev,
+.book-slider-controls .my-next {
   width: 48px;
   height: 48px;
-  position: absolute;
-  top: 50%;
-  transform: translateY(calc(-40px + -50%));
-  pointer-events: auto;
-  z-index: 32;
   cursor: pointer;
-  pointer-events: all;
   border-radius: 9999px;
   border: 1px solid #6a6a6a;
   background: rgba(225, 223, 223, 0.08);
@@ -153,25 +147,18 @@ input[type="number"] {
   transition: all 0.3s;
   display: grid;
   place-items: center;
+  flex: 0 0 auto;
 }
 
-.custom-nav .my-prev {
-  left: -63px;
-}
-
-.custom-nav .my-next {
-  right: -63px;
-}
-
-.custom-nav .my-prev:hover,
-.custom-nav .my-next:hover {
+.book-slider-controls .my-prev:hover,
+.book-slider-controls .my-next:hover {
   border-color: #000;
   background: rgba(0, 0, 0, 0.16);
 }
 
 /* Use masked SVG arrow instead of text */
-.custom-nav .my-prev::after,
-.custom-nav .my-next::after {
+.book-slider-controls .my-prev::after,
+.book-slider-controls .my-next::after {
   content: "";
   width: 16px;
   height: 16px;
@@ -182,19 +169,19 @@ input[type="number"] {
     no-repeat center / contain;
 }
 
-.custom-nav .my-prev::after {
+.book-slider-controls .my-prev::after {
   transform: rotate(180deg);
 }
 
 /* Dark mode */
-.dark .custom-nav .my-prev,
-.dark .custom-nav .my-next {
+.dark .book-slider-controls .my-prev,
+.dark .book-slider-controls .my-next {
   background: rgba(0, 0, 0, 0.45);
   border-color: rgba(255, 255, 255, 0.35);
   color: #fff;
 }
-.dark .custom-nav .my-prev:hover,
-.dark .custom-nav .my-next:hover {
+.dark .book-slider-controls .my-prev:hover,
+.dark .book-slider-controls .my-next:hover {
   background: rgba(0, 0, 0, 0.65);
   border-color: rgba(255, 255, 255, 0.6);
 }
@@ -238,12 +225,15 @@ input[type="number"] {
 /* button[disabled] {
   cursor: not-allowed;
 } */
-.book_slider .swiper-pagination {
-  bottom: 28px;
+.book-slider-controls .swiper-pagination {
+  position: static;
   display: flex;
   gap: 12px;
   justify-content: center;
   align-items: center;
+  flex: 0 0 auto;
+  width: auto !important;
+  margin: 0 !important;
 }
 
 .book_slider .hero-dot {

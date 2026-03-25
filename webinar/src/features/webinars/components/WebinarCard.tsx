@@ -20,10 +20,12 @@ const WebinarCard = ({ webinar }: WebinarCardProps) => {
   const isPaid = priceCents > 0;
   const paymentSettled =
     paymentMeta.paymentRequired === false || paymentMeta.paymentStatus === "paid";
-  const paymentPending =
+  const needsPaymentAction =
     submittedStatus === "verified" &&
     !paymentSettled &&
     (paymentMeta.paymentRequired === true || isPaid);
+  const paymentUnderReview = needsPaymentAction && paymentMeta.paymentStatus === "proof_submitted";
+  const paymentRejected = needsPaymentAction && paymentMeta.paymentStatus === "rejected";
   const confirmedLink = submittedEmail
     ? `/webinars/${webinar.slug}/confirmed?email=${encodeURIComponent(submittedEmail)}`
     : `/webinars/${webinar.slug}/confirmed`;
@@ -52,12 +54,26 @@ const WebinarCard = ({ webinar }: WebinarCardProps) => {
         </div>
 
         <div className="mt-6">
-          {paymentPending ? (
+          {paymentUnderReview ? (
             <Link
               to={confirmedLink}
               className="inline-block rounded bg-[#00a34a] px-5 py-3 font-text text-sm font-bold uppercase tracking-[0.08em] text-white transition hover:brightness-110"
             >
-              Payment pending
+              Payment under review
+            </Link>
+          ) : submittedStatus === "verified" && paymentSettled ? (
+            <Link
+              to={confirmedLink}
+              className="inline-block rounded bg-emerald-700 px-5 py-3 font-text text-sm font-bold uppercase tracking-[0.08em] text-white transition hover:bg-emerald-800"
+            >
+              {isPaid ? "Payment approved" : "Already registered"}
+            </Link>
+          ) : needsPaymentAction ? (
+            <Link
+              to={confirmedLink}
+              className="inline-block rounded bg-[#00a34a] px-5 py-3 font-text text-sm font-bold uppercase tracking-[0.08em] text-white transition hover:brightness-110"
+            >
+              {paymentRejected ? "Resubmit payment" : "Proceed to payment"}
             </Link>
           ) : submittedStatus === "verified" ? (
             <span

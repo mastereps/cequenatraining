@@ -1,6 +1,12 @@
 import type {
+  WebinarAdminPaymentProof,
+  WebinarAdminPaymentProofListResponse,
+  WebinarPaymentProofPayload,
+  WebinarPaymentProofResponse,
+  WebinarPaymentReviewResponse,
   RegistrationStatusResponse,
   ResendConfirmationResponse,
+  WebinarSendZoomLinksResponse,
   VerifyResponse,
   Webinar,
   WebinarListResponse,
@@ -176,4 +182,100 @@ export const createWebinarPaymentSession = async (
   }
 
   return (await res.json()) as WebinarPaymentSessionResponse;
+};
+
+export const submitWebinarPaymentProof = async (
+  slug: string,
+  payload: WebinarPaymentProofPayload,
+): Promise<WebinarPaymentProofResponse> => {
+  const res = await fetch(`/api/webinars/${encodeURIComponent(slug)}/payment-proof`, {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    throw new Error(await getErrorMessage(res));
+  }
+
+  return (await res.json()) as WebinarPaymentProofResponse;
+};
+
+export const listWebinarPaymentProofs = async (
+  slug: string,
+  status?: "submitted" | "approved" | "rejected",
+): Promise<WebinarAdminPaymentProof[]> => {
+  const params = new URLSearchParams();
+  if (status) params.set("status", status);
+
+  const suffix = params.toString() ? `?${params.toString()}` : "";
+  const res = await fetch(`/api/webinars/${encodeURIComponent(slug)}/payment-proofs${suffix}`, {
+    credentials: "include",
+  });
+
+  if (!res.ok) {
+    throw new Error(await getErrorMessage(res));
+  }
+
+  const payload = (await res.json()) as WebinarAdminPaymentProofListResponse;
+  return payload.data;
+};
+
+const postAdminPaymentAction = async (
+  slug: string,
+  path: "payment-approve" | "payment-reject",
+  body: { registration_id: string; review_notes?: string },
+): Promise<WebinarPaymentReviewResponse> => {
+  const res = await fetch(`/api/webinars/${encodeURIComponent(slug)}/${path}`, {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    throw new Error(await getErrorMessage(res));
+  }
+
+  return (await res.json()) as WebinarPaymentReviewResponse;
+};
+
+export const approveWebinarPaymentProof = async (
+  slug: string,
+  registrationId: string,
+  reviewNotes = "",
+) =>
+  postAdminPaymentAction(slug, "payment-approve", {
+    registration_id: registrationId,
+    review_notes: reviewNotes,
+  });
+
+export const rejectWebinarPaymentProof = async (
+  slug: string,
+  registrationId: string,
+  reviewNotes = "",
+) =>
+  postAdminPaymentAction(slug, "payment-reject", {
+    registration_id: registrationId,
+    review_notes: reviewNotes,
+  });
+
+export const sendWebinarZoomLinks = async (
+  slug: string,
+): Promise<WebinarSendZoomLinksResponse> => {
+  const res = await fetch(`/api/webinars/${encodeURIComponent(slug)}/send-zoom-links`, {
+    method: "POST",
+    credentials: "include",
+  });
+
+  if (!res.ok) {
+    throw new Error(await getErrorMessage(res));
+  }
+
+  return (await res.json()) as WebinarSendZoomLinksResponse;
 };

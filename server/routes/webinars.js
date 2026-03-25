@@ -1,13 +1,19 @@
 import express from "express";
 import {
+  approvePaymentProofController,
   createWebinarPaymentSessionController,
   getRegistrationStatusController,
   getWebinarBySlugController,
+  listPaymentProofsController,
   listWebinarsController,
+  rejectPaymentProofController,
   registerForWebinarController,
   resendConfirmationController,
+  sendZoomLinksController,
+  submitPaymentProofController,
   verifyRegistrationController,
 } from "../controllers/webinarController.js";
+import { requireRole } from "../middleware/auth.js";
 
 const router = express.Router();
 
@@ -16,6 +22,11 @@ router.get("/webinars/:slug", getWebinarBySlugController);
 router.get("/webinars/:slug/registration-status", getRegistrationStatusController);
 router.post("/webinars/:slug/register", registerForWebinarController);
 router.post("/webinars/:slug/payment-session", createWebinarPaymentSessionController);
+router.post("/webinars/:slug/payment-proof", submitPaymentProofController);
+router.get("/webinars/:slug/payment-proofs", requireRole("admin"), listPaymentProofsController);
+router.post("/webinars/:slug/payment-approve", requireRole("admin"), approvePaymentProofController);
+router.post("/webinars/:slug/payment-reject", requireRole("admin"), rejectPaymentProofController);
+router.post("/webinars/:slug/send-zoom-links", requireRole("admin"), sendZoomLinksController);
 router.get("/verify", verifyRegistrationController);
 router.post("/webinars/:slug/resend-confirmation", resendConfirmationController);
 

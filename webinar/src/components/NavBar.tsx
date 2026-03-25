@@ -19,8 +19,9 @@ const NavBar = () => {
   ];
   const [nav, setNav] = useState(true);
   const [isDark, setDark] = useState(() => {
-    if (typeof window === "undefined") return false; // SSR/defensive
-    return localStorage.getItem("theme") === "dark";
+    if (typeof window === "undefined") return true; // SSR/defensive
+    const savedTheme = localStorage.getItem("theme");
+    return savedTheme ? savedTheme === "dark" : true;
   });
   const { items, openCart } = useCart();
   const { user, logout } = useAuth();
@@ -65,12 +66,12 @@ const NavBar = () => {
               <li
                 key={label}
                 className="
-        group relative flex items-center px-4 py-4 cursor-pointer text-slate-900 dark:text-slate-100
+        group relative flex items-center px-4 py-4 text-slate-900 dark:text-slate-100
         
       "
               >
                 <Link
-                  className="relative inline-block
+                  className="relative cursor-pointer inline-block
       after:absolute after:left-0 after:-bottom-1 after:h-0.5 after:w-full after:bg-current
       after:scale-x-0 after:origin-right after:transition-transform after:duration-300 after:ease-out
       group-hover:after:scale-x-100 group-hover:after:origin-left"

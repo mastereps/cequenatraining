@@ -26,21 +26,39 @@ const FeaturedBooksSection = () => {
   const [navReady, setNavReady] = useState(false);
   const prevRef = useRef<HTMLButtonElement>(null);
   const nextRef = useRef<HTMLButtonElement>(null);
+  const paginationRef = useRef<HTMLDivElement>(null);
   const swiperRef = useRef<SwiperType | null>(null);
   const { addItem } = useCart();
 
   useEffect(() => {
     const swiper = swiperRef.current;
-    if (!navReady || !swiper || !prevRef.current || !nextRef.current) return;
+    if (
+      !navReady ||
+      !swiper ||
+      !prevRef.current ||
+      !nextRef.current ||
+      !paginationRef.current
+    ) {
+      return;
+    }
 
     swiper.params.navigation = {
       ...(swiper.params.navigation as object),
       prevEl: prevRef.current,
       nextEl: nextRef.current,
     };
+    swiper.params.pagination = {
+      ...(typeof swiper.params.pagination === "object" ? swiper.params.pagination : {}),
+      el: paginationRef.current,
+      clickable: true,
+    };
     swiper.navigation.destroy();
     swiper.navigation.init();
     swiper.navigation.update();
+    swiper.pagination.destroy();
+    swiper.pagination.init();
+    swiper.pagination.render();
+    swiper.pagination.update();
   }, [navReady, books.length]);
 
   useEffect(() => {
@@ -125,6 +143,7 @@ const FeaturedBooksSection = () => {
             setNavReady(true);
           }}
           pagination={{
+            el: paginationRef.current,
             clickable: true,
             bulletClass: "hero-dot",
             bulletActiveClass: "hero-dot-active",
@@ -232,11 +251,11 @@ const FeaturedBooksSection = () => {
             </SwiperSlide>
           ))}
         </Swiper>
-        {/* Swiper Navigation */}
-        <div className="custom-nav">
+        <div className="book-slider-controls">
           <button ref={prevRef} className="my-prev" aria-label="Previous">
             <span className="sr-only">Prev</span>
           </button>
+          <div ref={paginationRef} className="swiper-pagination" />
           <button ref={nextRef} className="my-next" aria-label="Next">
             <span className="sr-only">Next</span>
           </button>

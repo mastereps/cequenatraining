@@ -32,3 +32,17 @@ export const requireAuth = (req, res, next) => {
   }
   return next();
 };
+
+export const requireRole = (...allowedRoles) => (req, res, next) => {
+  if (!req.authUser) {
+    return res.status(401).json({ error: "Authentication required." });
+  }
+
+  const role = String(req.authUser.role || "").trim().toLowerCase();
+  const normalizedAllowedRoles = allowedRoles.map((value) => String(value || "").trim().toLowerCase());
+  if (!normalizedAllowedRoles.includes(role)) {
+    return res.status(403).json({ error: "You are not allowed to perform this action." });
+  }
+
+  return next();
+};

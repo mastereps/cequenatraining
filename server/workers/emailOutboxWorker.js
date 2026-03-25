@@ -38,6 +38,14 @@ const toManilaDateTime = (iso) => {
   }).format(new Date(iso));
 };
 
+const formatCurrency = (amountCents, currency = "PHP") => {
+  const amount = Number(amountCents || 0) / 100;
+  return new Intl.NumberFormat("en-PH", {
+    style: "currency",
+    currency,
+  }).format(amount);
+};
+
 const renderTemplate = (templateKey, payload) => {
   if (templateKey === "webinar.verify") {
     const schedule = toManilaDateTime(payload.webinar_start_at);
@@ -87,6 +95,74 @@ const renderTemplate = (templateKey, payload) => {
         <p>Your registration for <strong>${escapeHtml(payload.webinar_title)}</strong> is confirmed.</p>
         <p><strong>Schedule:</strong> ${escapeHtml(schedule)} (${escapeHtml(payload.webinar_timezone || "Asia/Manila")})</p>
         ${joinHtml}
+      `,
+    };
+  }
+
+  if (templateKey === "webinar.payment_received") {
+    const schedule = toManilaDateTime(payload.webinar_start_at);
+    const amount = formatCurrency(payload.amount_cents, payload.currency || "PHP");
+    return {
+      subject: `Payment submitted: ${payload.webinar_title}`,
+      text: [
+        `Hi ${payload.full_name},`,
+        "",
+        `We received your payment submission for "${payload.webinar_title}".`,
+        `Schedule: ${schedule} (${payload.webinar_timezone || "Asia/Manila"})`,
+        `Amount: ${amount}`,
+        `Reference number: ${payload.reference_number}`,
+        "",
+        "Your payment is now under manual review. We will email you once it has been validated.",
+      ].join("\n"),
+      html: `
+        <p>Hi ${escapeHtml(payload.full_name)},</p>
+        <p>We received your payment submission for <strong>${escapeHtml(payload.webinar_title)}</strong>.</p>
+        <p><strong>Schedule:</strong> ${escapeHtml(schedule)} (${escapeHtml(payload.webinar_timezone || "Asia/Manila")})</p>
+        <p><strong>Amount:</strong> ${escapeHtml(amount)}</p>
+        <p><strong>Reference number:</strong> ${escapeHtml(payload.reference_number)}</p>
+        <p>Your payment is now under manual review. We will email you once it has been validated.</p>
+      `,
+    };
+  }
+
+  if (templateKey === "webinar.payment_approved") {
+    const schedule = toManilaDateTime(payload.webinar_start_at);
+    return {
+      subject: `Payment approved: ${payload.webinar_title}`,
+      text: [
+        `Hi ${payload.full_name},`,
+        "",
+        `Your payment for "${payload.webinar_title}" has been approved.`,
+        `Schedule: ${schedule} (${payload.webinar_timezone || "Asia/Manila"})`,
+        "",
+        "Your Zoom link will be sent by email later.",
+      ].join("\n"),
+      html: `
+        <p>Hi ${escapeHtml(payload.full_name)},</p>
+        <p>Your payment for <strong>${escapeHtml(payload.webinar_title)}</strong> has been approved.</p>
+        <p><strong>Schedule:</strong> ${escapeHtml(schedule)} (${escapeHtml(payload.webinar_timezone || "Asia/Manila")})</p>
+        <p>Your Zoom link will be sent by email later.</p>
+      `,
+    };
+  }
+
+  if (templateKey === "webinar.zoom_link") {
+    const schedule = toManilaDateTime(payload.webinar_start_at);
+    return {
+      subject: `Zoom link: ${payload.webinar_title}`,
+      text: [
+        `Hi ${payload.full_name},`,
+        "",
+        `Here is your Zoom link for "${payload.webinar_title}".`,
+        `Schedule: ${schedule} (${payload.webinar_timezone || "Asia/Manila"})`,
+        "",
+        `Join link: ${payload.join_url}`,
+      ].join("\n"),
+      html: `
+        <p>Hi ${escapeHtml(payload.full_name)},</p>
+        <p>Here is your Zoom link for <strong>${escapeHtml(payload.webinar_title)}</strong>.</p>
+        <p><strong>Schedule:</strong> ${escapeHtml(schedule)} (${escapeHtml(payload.webinar_timezone || "Asia/Manila")})</p>
+        <p><a href="${escapeHtml(payload.join_url)}">Join webinar</a></p>
       `,
     };
   }

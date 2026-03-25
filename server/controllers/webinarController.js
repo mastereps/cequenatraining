@@ -1,10 +1,14 @@
 import {
   createWebinarPaymentSession,
+  listPaymentProofsForWebinar,
   getRegistrationStatusForWebinar,
   getWebinarBySlug,
   listWebinars,
   registerForWebinar,
+  reviewPaymentProof,
   resendConfirmation,
+  sendZoomLinksForWebinar,
+  submitPaymentProof,
   verifyRegistration,
 } from "../services/webinarService.js";
 import { isAppError } from "../utils/errors.js";
@@ -157,6 +161,92 @@ export const createWebinarPaymentSessionController = async (req, res) => {
     return res.status(200).json(result);
   } catch (error) {
     return handleError(res, error, "create_webinar_payment_session");
+  }
+};
+
+export const submitPaymentProofController = async (req, res) => {
+  try {
+    const requestedUserId = parseRequestedUserId(req.body?.user_id);
+    if (requestedUserId && (!req.authUser || req.authUser.id !== requestedUserId)) {
+      return res.status(403).json({
+        error: "You are not allowed to submit payment proof for another user.",
+      });
+    }
+
+    const effectiveUserId = req.authUser?.id || requestedUserId;
+    const result = await submitPaymentProof({
+      slug: req.params.slug,
+      email: req.body?.email,
+      userId: effectiveUserId,
+      referenceNumber: req.body?.reference_number,
+      payerName: req.body?.payer_name,
+      payerGcashNumber: req.body?.payer_gcash_number,
+    });
+
+    return res.status(202).json(result);
+  } catch (error) {
+    return handleError(res, error, "submit_payment_proof");
+  }
+};
+
+export const listPaymentProofsController = async (req, res) => {
+  try {
+    const rows = await listPaymentProofsForWebinar({
+      slug: req.params.slug,
+      status: req.query.status,
+    });
+
+    return res.json({
+      ok: true,
+      data: rows,
+      count: rows.length,
+    });
+  } catch (error) {
+    return handleError(res, error, "list_payment_proofs");
+  }
+};
+
+export const approvePaymentProofController = async (req, res) => {
+  try {
+    const result = await reviewPaymentProof({
+      slug: req.params.slug,
+      registrationId: req.body?.registration_id,
+      decision: "approved",
+      reviewNotes: req.body?.review_notes,
+      reviewedBy: req.authUser?.id,
+    });
+
+    return res.json(result);
+  } catch (error) {
+    return handleError(res, error, "approve_payment_proof");
+  }
+};
+
+export const rejectPaymentProofController = async (req, res) => {
+  try {
+    const result = await reviewPaymentProof({
+      slug: req.params.slug,
+      registrationId: req.body?.registration_id,
+      decision: "rejected",
+      reviewNotes: req.body?.review_notes,
+      reviewedBy: req.authUser?.id,
+    });
+
+    return res.json(result);
+  } catch (error) {
+    return handleError(res, error, "reject_payment_proof");
+  }
+};
+
+export const sendZoomLinksController = async (req, res) => {
+  try {
+    const result = await sendZoomLinksForWebinar({
+      slug: req.params.slug,
+    });
+
+    return res.json(result);
+  } catch (error) {
+    return handleError(res, error, "send_zoom_links");
   }
 };
 
