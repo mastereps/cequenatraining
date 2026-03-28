@@ -24,51 +24,51 @@ const About = () => {
           className="h-fulls max-h-[366px] rounded-2xl"
         />
       </div>
-      <div className="stats grid grid-cols-4 gap-4 min-[1100px]:max-w-[1100px] mx-auto">
+      <div className="stats mx-auto grid w-full max-w-[1100px] grid-cols-1 gap-4 px-3 sm:grid-cols-2 sm:px-4 lg:grid-cols-4">
         <div
-          className="relative p-8 border dark:border-white/15 border-black/15
+          className="relative border border-black/15 p-6 dark:border-white/15 sm:p-8
   before:absolute before:left-1/2 before:top-0 before:block
   before:h-px before:w-3/4 before:-translate-x-1/2
   before:bg-gradient-to-r before:from-transparent
   before:via-[#9e7cff] before:to-transparent before:content-['']"
         >
-          <p className="text-[#9e7cff] font-bold text-4xl leading-tight tracking-[0.05em] mb-3">
+          <p className="mb-3 text-3xl leading-tight tracking-[0.05em] text-[#9e7cff] font-bold sm:text-4xl">
             1000+
           </p>
-          <p className="text-[18px]">Teachers trained</p>
+          <p className="text-base sm:text-[18px]">Teachers trained</p>
         </div>
         <div
-          className="relative p-8 border dark:border-white/15 border-black/15 before:absolute before:left-1/2 before:top-0 before:block
+          className="relative border border-black/15 p-6 dark:border-white/15 before:absolute before:left-1/2 before:top-0 before:block
   before:h-px before:w-3/4 before:-translate-x-1/2
   before:bg-gradient-to-r before:from-transparent
-  before:via-lantern before:to-transparent before:content-['']"
+  before:via-lantern before:to-transparent before:content-[''] sm:p-8"
         >
-          <p className="text-lantern font-bold text-4xl leading-tight tracking-[0.05em] mb-3">
+          <p className="mb-3 text-3xl leading-tight tracking-[0.05em] text-lantern font-bold sm:text-4xl">
             30+
           </p>
-          <p className="text-[18px]">Years of teaching experience</p>
+          <p className="text-base sm:text-[18px]">Years of teaching experience</p>
         </div>
         <div
-          className="relative p-8 border dark:border-white/15 border-black/15 before:absolute before:left-1/2 before:top-0 before:block
+          className="relative border border-black/15 p-6 dark:border-white/15 before:absolute before:left-1/2 before:top-0 before:block
   before:h-px before:w-3/4 before:-translate-x-1/2
   before:bg-gradient-to-r before:from-transparent
-  before:via-[rgb(255,95,204)] before:to-transparent before:content-['']"
+  before:via-[rgb(255,95,204)] before:to-transparent before:content-[''] sm:p-8"
         >
-          <p className="text-[rgb(255,95,204)] font-bold text-4xl leading-tight tracking-[0.05em] mb-3">
+          <p className="mb-3 text-3xl leading-tight tracking-[0.05em] text-[rgb(255,95,204)] font-bold sm:text-4xl">
             7
           </p>
-          <p className="text-[18px]">Books published</p>
+          <p className="text-base sm:text-[18px]">Books published</p>
         </div>
         <div
-          className="relative p-8 border dark:border-white/15 border-black/15 before:absolute before:left-1/2 before:top-0 before:block
+          className="relative border border-black/15 p-6 dark:border-white/15 before:absolute before:left-1/2 before:top-0 before:block
   before:h-px before:w-3/4 before:-translate-x-1/2
   before:bg-gradient-to-r before:from-transparent
-  before:via-[rgb(255,159,36)] before:to-transparent before:content-['']"
+  before:via-[rgb(255,159,36)] before:to-transparent before:content-[''] sm:p-8"
         >
-          <p className="text-[rgb(255,159,36)] font-bold text-4xl leading-tight tracking-[0.05em] mb-3">
+          <p className="mb-3 text-3xl leading-tight tracking-[0.05em] text-[rgb(255,159,36)] font-bold sm:text-4xl">
             32
           </p>
-          <p className="text-[18px]">Webinars</p>
+          <p className="text-base sm:text-[18px]">Webinars</p>
         </div>
       </div>
     </section>
