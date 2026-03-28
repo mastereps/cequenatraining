@@ -1,6 +1,7 @@
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { fetchRegistrationStatus, fetchWebinarBySlug } from "../../features/webinars/api";
+import WebinarQrNoticeModal from "../../features/webinars/components/WebinarQrNoticeModal";
 import {
   clearSubmittedEmailForWebinar,
   getSubmittedEmailForWebinar,
@@ -14,8 +15,11 @@ import { formatManilaDateTime, formatSeatLabel } from "../../features/webinars/f
 import { useAuth } from "../../store/AuthContext";
 import { formatPrice } from "../../utils/formatPrice";
 
+const DEFAULT_REGISTRATION_QR_IMAGE_URL = "/images/google_qr_code_ai_teaching.png";
+
 const WebinarDetailPage = () => {
   const { slug = "" } = useParams();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [webinar, setWebinar] = useState<Webinar | null>(null);
   const [registrationStatus, setRegistrationStatus] = useState<"pending" | "verified" | null>(
@@ -24,6 +28,7 @@ const WebinarDetailPage = () => {
   const [paymentRequired, setPaymentRequired] = useState<boolean | null>(null);
   const [paymentStatus, setPaymentStatus] = useState<WebinarPaymentStatus | null>(null);
   const [submittedEmail, setSubmittedEmail] = useState("");
+  const [isRegistrationNoticeOpen, setIsRegistrationNoticeOpen] = useState(false);
   const [isPosterModalOpen, setIsPosterModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -310,12 +315,22 @@ const WebinarDetailPage = () => {
                       Verification pending
                     </Link>
                   ) : (
-                    <Link
-                      to={`/webinars/${webinar.slug}/register`}
-                      className="rounded-xl bg-lantern px-6 py-3 text-center font-text text-sm font-bold uppercase tracking-[0.08em] text-white transition hover:bg-lantern/90"
-                    >
-                      Reserve my spot
-                    </Link>
+                    isPaid ? (
+                      <button
+                        type="button"
+                        onClick={() => setIsRegistrationNoticeOpen(true)}
+                        className="rounded-xl bg-lantern px-6 py-3 text-center font-text text-sm font-bold uppercase tracking-[0.08em] text-white transition hover:bg-lantern/90"
+                      >
+                        Reserve my spot
+                      </button>
+                    ) : (
+                      <Link
+                        to={`/webinars/${webinar.slug}/register`}
+                        className="rounded-xl bg-lantern px-6 py-3 text-center font-text text-sm font-bold uppercase tracking-[0.08em] text-white transition hover:bg-lantern/90"
+                      >
+                        Reserve my spot
+                      </Link>
+                    )
                   )}
 
                   <Link
@@ -476,7 +491,7 @@ const WebinarDetailPage = () => {
         </div>
       </section>
 
-      {isPosterModalOpen && webinar.poster_image_url ? (
+      {isPosterModalOpen ? (
         <div
           className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/88 px-3 py-6 backdrop-blur-sm sm:px-5 sm:py-8"
           onClick={() => setIsPosterModalOpen(false)}
@@ -491,7 +506,7 @@ const WebinarDetailPage = () => {
               onClick={(event) => event.stopPropagation()}
               role="dialog"
               aria-modal="true"
-              aria-label={`${webinar.title} poster enlarged`}
+              aria-label={`${webinar.title} registration QR enlarged`}
             >
               <button
                 type="button"
@@ -500,17 +515,35 @@ const WebinarDetailPage = () => {
               >
                 Close
               </button>
-              <div className="overflow-x-auto overflow-y-visible rounded-[24px] bg-slate-900 p-2 sm:p-4">
+              <div className="rounded-[24px] bg-slate-900 p-4 sm:p-6">
+                <p className="px-2 text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-300">
+                  Registration QR
+                </p>
                 <img
-                  src={webinar.poster_image_url}
-                  alt={webinar.title}
-                  className="mx-auto h-auto w-full rounded-[20px] object-contain"
+                  src={DEFAULT_REGISTRATION_QR_IMAGE_URL}
+                  alt={`${webinar.title} registration QR`}
+                  className="mx-auto mt-4 h-auto w-full max-w-[420px] rounded-[20px] border border-emerald-200 bg-white p-3 object-contain"
                 />
               </div>
             </div>
           </div>
         </div>
       ) : null}
+
+      <WebinarQrNoticeModal
+        open={isRegistrationNoticeOpen}
+        onClose={() => setIsRegistrationNoticeOpen(false)}
+        heading="Registration Required Before Payment"
+        notice="Please make sure you have completed and submitted your registration details first before proceeding to verification and payment."
+        supportingText="Registration and Google Form submission must be completed first. Payment and verification should only be done after submitting your details."
+        imageUrl={DEFAULT_REGISTRATION_QR_IMAGE_URL}
+        imageAlt={`${webinar.title} registration QR`}
+        primaryActionLabel="I Already Submitted My Details"
+        onPrimaryAction={() => {
+          setIsRegistrationNoticeOpen(false);
+          navigate(`/webinars/${webinar.slug}/register`);
+        }}
+      />
     </main>
   );
 };

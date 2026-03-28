@@ -155,6 +155,12 @@ const WebinarPaymentAdminPage = () => {
             {sendingZoom ? "Sending..." : "Send Zoom links"}
           </button>
           <Link
+            to="/admin/webinars/payments"
+            className="rounded border border-emerald-400 px-5 py-3 text-sm font-semibold uppercase tracking-[0.08em] text-emerald-700 transition hover:bg-emerald-50 dark:border-emerald-500 dark:text-emerald-300 dark:hover:bg-emerald-950/30"
+          >
+            All payment reviews
+          </Link>
+          <Link
             to={`/webinars/${slug}`}
             className="rounded border border-slate-300 px-5 py-3 text-sm font-semibold uppercase tracking-[0.08em] text-slate-700 transition hover:bg-slate-100 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"
           >

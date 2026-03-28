@@ -58,6 +58,8 @@ const publicBaseUrl = resolvePublicBaseUrl();
 const normalizeJoinLinkDeliveryMode = (value) =>
   String(value || "auto").trim().toLowerCase() === "manual" ? "manual" : "auto";
 
+const digitsOnly = (value) => String(value || "").replace(/\D/g, "");
+
 const mapPaymentProof = (row) => {
   if (!row?.payment_proof_id) return null;
 
@@ -831,9 +833,9 @@ export const submitPaymentProof = async ({
   const cleanEmail = email ? normalizeEmail(email) : "";
   const rawUserId = Number(userId);
   const cleanUserId = Number.isInteger(rawUserId) && rawUserId > 0 ? rawUserId : null;
-  const cleanReferenceNumber = sanitizeText(referenceNumber, 120);
+  const cleanReferenceNumber = digitsOnly(referenceNumber).slice(0, 13);
   const cleanPayerName = sanitizeText(payerName, 180);
-  const cleanPayerGcashNumber = sanitizeText(payerGcashNumber, 40);
+  const cleanPayerGcashNumber = digitsOnly(payerGcashNumber).slice(0, 11);
 
   if (!cleanUserId && !cleanEmail) {
     throw new AppError(400, "Either user_id or email is required.");
@@ -841,14 +843,14 @@ export const submitPaymentProof = async ({
   if (cleanEmail && !isValidEmail(cleanEmail)) {
     throw new AppError(400, "A valid email is required.");
   }
-  if (cleanReferenceNumber.length < 4) {
-    throw new AppError(400, "A valid payment reference number is required.");
+  if (cleanReferenceNumber.length !== 13) {
+    throw new AppError(400, "GCash reference number must be exactly 13 digits.");
   }
   if (cleanPayerName.length < 2) {
     throw new AppError(400, "Payer name is required.");
   }
-  if (cleanPayerGcashNumber.length < 7) {
-    throw new AppError(400, "A valid GCash number is required.");
+  if (cleanPayerGcashNumber.length !== 11) {
+    throw new AppError(400, "GCash number must be exactly 11 digits.");
   }
 
   const client = await pool.connect();

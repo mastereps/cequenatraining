@@ -10,12 +10,16 @@ import { useCart } from "../store/CartContext";
 import { useAuth } from "../store/AuthContext";
 import { CART_CHECKOUT_ENABLED } from "../config/commerce";
 const NavBar = () => {
+  const { items, openCart } = useCart();
+  const { user, logout } = useAuth();
+  const isAdmin = String(user?.role || "").trim().toLowerCase() === "admin";
   const links = [
     { label: "Home", href: "/" },
     { label: "Webinars", href: "/webinars" },
     { label: "Products", href: "/products" },
     { label: "About", href: "/about" },
     { label: "Contact", href: "/contact" },
+    ...(isAdmin ? [{ label: "Payment Review", href: "/admin/webinars/payments" }] : []),
   ];
   const [nav, setNav] = useState(true);
   const [isDark, setDark] = useState(() => {
@@ -23,8 +27,6 @@ const NavBar = () => {
     const savedTheme = localStorage.getItem("theme");
     return savedTheme ? savedTheme === "dark" : true;
   });
-  const { items, openCart } = useCart();
-  const { user, logout } = useAuth();
   const cartCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
   useEffect(() => {

@@ -229,8 +229,8 @@ const WebinarRegisterPage = () => {
 
         {isPaidWebinar ? (
           <p className="text-sm text-slate-600 dark:text-slate-300">
-            After verifying your email, you will be shown the GCash QR code and asked to submit
-            your payment details for manual review.
+            After verifying your email, complete the registration reminder step first, then open
+            the GCash QR modal and submit your payment details for manual review.
           </p>
         ) : null}
 

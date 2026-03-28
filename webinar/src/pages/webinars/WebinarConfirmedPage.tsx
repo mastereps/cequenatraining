@@ -6,6 +6,7 @@ import {
   fetchWebinarBySlug,
   submitWebinarPaymentProof,
 } from "../../features/webinars/api";
+import WebinarQrNoticeModal from "../../features/webinars/components/WebinarQrNoticeModal";
 import {
   setSubmittedEmailForWebinar,
   setSubmittedPaymentMetaForWebinar,
@@ -39,6 +40,9 @@ const formatGcashReferenceNumber = (value: string) =>
 const formatPhilippineMobileNumber = (value: string) =>
   formatGroupedDigits(digitsOnly(value).slice(0, 11), [4, 3, 4]);
 
+const REQUIRED_REFERENCE_DIGITS = 13;
+const REQUIRED_GCASH_DIGITS = 11;
+
 const WebinarConfirmedPage = () => {
   const { slug = "" } = useParams();
   const [params] = useSearchParams();
@@ -51,6 +55,7 @@ const WebinarConfirmedPage = () => {
   const [payerGcashNumber, setPayerGcashNumber] = useState("");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [isPaymentQrModalOpen, setIsPaymentQrModalOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -148,6 +153,21 @@ const WebinarConfirmedPage = () => {
     event.preventDefault();
     if (submitting) return;
 
+    const cleanReferenceNumber = digitsOnly(referenceNumber);
+    const cleanPayerGcashNumber = digitsOnly(payerGcashNumber);
+
+    if (cleanReferenceNumber.length !== REQUIRED_REFERENCE_DIGITS) {
+      setError("GCash reference number must be exactly 13 digits.");
+      setMessage(null);
+      return;
+    }
+
+    if (cleanPayerGcashNumber.length !== REQUIRED_GCASH_DIGITS) {
+      setError("GCash number must be exactly 11 digits.");
+      setMessage(null);
+      return;
+    }
+
     setSubmitting(true);
     setError(null);
     setMessage(null);
@@ -156,9 +176,9 @@ const WebinarConfirmedPage = () => {
       const response = await submitWebinarPaymentProof(slug, {
         email: email || undefined,
         user_id: user?.id ?? null,
-        reference_number: digitsOnly(referenceNumber),
+        reference_number: cleanReferenceNumber,
         payer_name: payerName,
-        payer_gcash_number: digitsOnly(payerGcashNumber),
+        payer_gcash_number: cleanPayerGcashNumber,
       });
 
       setMessage(response.message);
@@ -198,6 +218,10 @@ const WebinarConfirmedPage = () => {
       registration?.payment_status !== "proof_submitted",
   );
   const zoomLinkSent = Boolean(registration?.zoom_link_sent_at);
+  const referenceDigits = digitsOnly(referenceNumber);
+  const gcashDigits = digitsOnly(payerGcashNumber);
+  const isReferenceComplete = referenceDigits.length === REQUIRED_REFERENCE_DIGITS;
+  const isGcashNumberComplete = gcashDigits.length === REQUIRED_GCASH_DIGITS;
 
   const statusTitle = isPaid
     ? zoomLinkSent
@@ -300,8 +324,18 @@ const WebinarConfirmedPage = () => {
                   setReferenceNumber(digitsOnly(event.target.value).slice(0, 13))
                 }
                 className="w-full rounded border border-slate-300 px-3 py-2 dark:border-slate-600 dark:bg-slate-800"
+                maxLength={15}
                 placeholder="1234 5678 90123"
               />
+              <p
+                className={`mt-1 text-xs ${
+                  referenceDigits.length > 0 && !isReferenceComplete
+                    ? "text-red-600"
+                    : "text-slate-500 dark:text-slate-300"
+                }`}
+              >
+                13 digits required.
+              </p>
             </div>
 
             <div className="mt-4">
@@ -333,8 +367,18 @@ const WebinarConfirmedPage = () => {
                   setPayerGcashNumber(digitsOnly(event.target.value).slice(0, 11))
                 }
                 className="w-full rounded border border-slate-300 px-3 py-2 dark:border-slate-600 dark:bg-slate-800"
+                maxLength={13}
                 placeholder="09XX XXX XXXX"
               />
+              <p
+                className={`mt-1 text-xs ${
+                  gcashDigits.length > 0 && !isGcashNumberComplete
+                    ? "text-red-600"
+                    : "text-slate-500 dark:text-slate-300"
+                }`}
+              >
+                11 digits required.
+              </p>
             </div>
 
             {error ? <p className="mt-4 text-sm text-red-600">{error}</p> : null}
@@ -342,7 +386,13 @@ const WebinarConfirmedPage = () => {
 
             <button
               type="submit"
-              disabled={submitting}
+              disabled={
+                submitting ||
+                !isReferenceComplete ||
+                !isGcashNumberComplete ||
+                payerName.trim().length < 2 ||
+                !email.trim()
+              }
               className="mt-6 rounded bg-[#00a34a] px-6 py-3 text-sm font-bold uppercase tracking-[0.08em] text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {submitting ? "Submitting..." : paymentRejected ? "Resubmit payment" : "Submit payment"}
@@ -350,14 +400,20 @@ const WebinarConfirmedPage = () => {
           </form>
 
           <aside className="rounded-lg border border-emerald-200 bg-emerald-50 p-6 text-emerald-950">
-            <h2 className="text-xl font-semibold uppercase tracking-[0.06em]">GCash QR</h2>
-            {webinar.payment_qr_image_url ? (
-              <img
-                src={webinar.payment_qr_image_url}
-                alt={`${webinar.title} GCash QR`}
-                className="mt-4 w-full rounded-xl border border-emerald-200 bg-white p-3 shadow-sm"
-              />
-            ) : null}
+            <h2 className="text-xl font-semibold uppercase tracking-[0.06em]">
+              GCash payment QR
+            </h2>
+            <p className="mt-2 text-sm leading-6">
+              Review the registration reminder first, then open the QR modal to pay the exact
+              amount.
+            </p>
+            <button
+              type="button"
+              onClick={() => setIsPaymentQrModalOpen(true)}
+              className="mt-4 w-full rounded-xl bg-[#00a34a] px-5 py-3 text-sm font-bold uppercase tracking-[0.08em] text-white transition hover:brightness-110"
+            >
+              View GCash QR
+            </button>
             <div className="mt-4 rounded-xl border border-emerald-200 bg-white/85 p-4 text-sm leading-6">
               <p className="font-semibold text-emerald-900">Can&apos;t scan the QR?</p>
               <p className="mt-1 text-emerald-950">
@@ -432,6 +488,33 @@ const WebinarConfirmedPage = () => {
 
       {error && webinar ? <p className="mt-4 text-sm text-red-600">{error}</p> : null}
       {message && !needsPaymentSubmission ? <p className="mt-4 text-sm text-green-700">{message}</p> : null}
+
+      {webinar ? (
+        <WebinarQrNoticeModal
+          open={isPaymentQrModalOpen}
+          onClose={() => setIsPaymentQrModalOpen(false)}
+          heading="Registration Required Before Payment"
+          notice="Please make sure you have completed and submitted your registration details first before proceeding to verification and payment."
+          supportingText="Registration and Google Form submission must be completed first. Payment and verification should only be done after submitting your details."
+          imageUrl={webinar.payment_qr_image_url}
+          imageAlt={`${webinar.title} GCash QR`}
+          primaryActionLabel="I Already Submitted My Details"
+          onPrimaryAction={() => setIsPaymentQrModalOpen(false)}
+        >
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4 text-sm leading-6 text-emerald-950 dark:border-emerald-900/40 dark:bg-emerald-950/20 dark:text-emerald-100">
+            <p className="font-semibold uppercase tracking-[0.12em]">Payment note</p>
+            <p className="mt-2">
+              Pay the exact webinar amount and submit the reference number, payer name, and GCash
+              number in the form after closing this modal.
+            </p>
+            {webinar.payment_instructions ? (
+              <div className="mt-3 whitespace-pre-line rounded-xl bg-white/80 p-3 dark:bg-slate-950/60">
+                {webinar.payment_instructions}
+              </div>
+            ) : null}
+          </div>
+        </WebinarQrNoticeModal>
+      ) : null}
 
       <div className="mt-6">
         <Link to="/webinars" className="text-sm font-semibold underline">
