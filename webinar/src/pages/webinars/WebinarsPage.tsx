@@ -16,6 +16,7 @@ const TOPIC_OPTIONS = [
   "Research & Publication",
   "Digital Learning",
   "Classroom Strategies",
+  "Language & Literacy",
   "General",
 ];
 

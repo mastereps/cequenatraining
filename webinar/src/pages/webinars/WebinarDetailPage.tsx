@@ -12,10 +12,9 @@ import {
 } from "../../features/webinars/registrationSession";
 import type { Webinar, WebinarPaymentStatus } from "../../features/webinars/types";
 import { formatManilaDateTime, formatSeatLabel } from "../../features/webinars/format";
+import { getRegistrationQrImageUrl } from "../../features/webinars/registrationQr";
 import { useAuth } from "../../store/AuthContext";
 import { formatPrice } from "../../utils/formatPrice";
-
-const DEFAULT_REGISTRATION_QR_IMAGE_URL = "/images/google_qr_code_ai_teaching.png";
 
 const WebinarDetailPage = () => {
   const { slug = "" } = useParams();
@@ -237,6 +236,7 @@ const WebinarDetailPage = () => {
     { label: "Availability", value: seatLabel },
     { label: "Fee", value: feeLabel },
   ];
+  const registrationQrImageUrl = getRegistrationQrImageUrl(webinar.slug);
 
   return (
     <main className="mx-auto mt-28 max-w-[1280px] px-4 pb-20">
@@ -429,7 +429,7 @@ const WebinarDetailPage = () => {
                           className="h-auto max-h-[720px] w-full rounded-[20px] object-contain"
                         />
                         <span className="pointer-events-none absolute left-3 top-6 rounded-full bg-slate-950/82 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-white transition group-hover:bg-slate-900 group-hover:text-white dark:bg-white/92 dark:text-slate-950 dark:group-hover:bg-slate-900 dark:group-hover:text-white">
-                          ❯❯ Enlarge QR
+                          Enlarge poster
                         </span>
                       </button>
                     ) : (
@@ -506,7 +506,7 @@ const WebinarDetailPage = () => {
               onClick={(event) => event.stopPropagation()}
               role="dialog"
               aria-modal="true"
-              aria-label={`${webinar.title} registration QR enlarged`}
+              aria-label={`${webinar.title} poster enlarged`}
             >
               <button
                 type="button"
@@ -517,12 +517,12 @@ const WebinarDetailPage = () => {
               </button>
               <div className="rounded-[24px] bg-slate-900 p-4 sm:p-6">
                 <p className="px-2 text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-300">
-                  Registration QR
+                  Webinar poster
                 </p>
                 <img
-                  src={DEFAULT_REGISTRATION_QR_IMAGE_URL}
-                  alt={`${webinar.title} registration QR`}
-                  className="mx-auto mt-4 h-auto w-full max-w-[420px] rounded-[20px] border border-emerald-200 bg-white p-3 object-contain"
+                  src={webinar.poster_image_url || undefined}
+                  alt={`${webinar.title} poster`}
+                  className="mx-auto mt-4 h-auto w-full max-w-[720px] rounded-[20px] border border-emerald-200 bg-white p-3 object-contain"
                 />
               </div>
             </div>
@@ -536,7 +536,7 @@ const WebinarDetailPage = () => {
         heading="Registration Required Before Payment"
         notice="Please make sure you have completed and submitted your registration details first before proceeding to verification and payment."
         supportingText="Registration and Google Form submission must be completed first. Payment and verification should only be done after submitting your details."
-        imageUrl={DEFAULT_REGISTRATION_QR_IMAGE_URL}
+        imageUrl={registrationQrImageUrl}
         imageAlt={`${webinar.title} registration QR`}
         primaryActionLabel="I Already Submitted My Details"
         onPrimaryAction={() => {
