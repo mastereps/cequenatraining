@@ -2,6 +2,7 @@ import "./loadEnv.js";
 import express from "express";
 import cors from "cors";
 import nodemailer from "nodemailer";
+import { pathToFileURL } from "url";
 import { query, pool } from "./db.js"; // keep .js if db.js is still JS
 import paymentsRouter from "./routes/payments.js";
 import webhooksRouter from "./routes/webhooks.js";
@@ -11,7 +12,7 @@ import { logger } from "./utils/logger.js";
 import { startEmailOutboxWorker } from "./workers/emailOutboxWorker.js";
 import { attachAuthUser } from "./middleware/auth.js";
 
-const app = express();
+export const app = express();
 const isProduction = process.env.NODE_ENV === "production";
 const allowedCorsOrigins = String(process.env.CORS_ORIGINS || "")
   .split(",")
@@ -693,22 +694,30 @@ app.post("/api/cart/:cartId/checkout", async (req, res) => {
 //   }
 // });
 
-const port = process.env.PORT || 5001;
-
-const stopEmailOutboxWorker = startEmailOutboxWorker();
-
-const server = app.listen(port, () => {
-  logger.info("api_started", { port });
-});
-
-const gracefulShutdown = () => {
-  logger.info("api_shutdown_started");
-  stopEmailOutboxWorker();
-  server.close(() => {
-    logger.info("api_shutdown_complete");
-    process.exit(0);
+export const startServer = ({ port = process.env.PORT || 5001 } = {}) => {
+  const stopEmailOutboxWorker = startEmailOutboxWorker();
+  const server = app.listen(port, () => {
+    logger.info("api_started", { port });
   });
+
+  const gracefulShutdown = () => {
+    logger.info("api_shutdown_started");
+    stopEmailOutboxWorker();
+    server.close(() => {
+      logger.info("api_shutdown_complete");
+      process.exit(0);
+    });
+  };
+
+  process.on("SIGINT", gracefulShutdown);
+  process.on("SIGTERM", gracefulShutdown);
+
+  return server;
 };
 
-process.on("SIGINT", gracefulShutdown);
-process.on("SIGTERM", gracefulShutdown);
+const isDirectExecution =
+  process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+
+if (isDirectExecution) {
+  startServer();
+}
