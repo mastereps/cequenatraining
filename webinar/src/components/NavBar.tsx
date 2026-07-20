@@ -19,7 +19,12 @@ const NavBar = () => {
     { label: "Products", href: "/products" },
     { label: "About", href: "/about" },
     { label: "Contact", href: "/contact" },
-    ...(isAdmin ? [{ label: "Payment Review", href: "/admin/webinars/payments" }] : []),
+    ...(isAdmin
+      ? [
+          { label: "Content", href: "/admin/content" },
+          { label: "Payment Review", href: "/admin/webinars/payments" },
+        ]
+      : []),
   ];
   const [nav, setNav] = useState(true);
   const [isDark, setDark] = useState(() => {

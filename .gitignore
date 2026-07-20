@@ -13,6 +13,9 @@ dist-ssr
 *.local
 .env
 
+# uploaded content images (served at /api/uploads)
+server/uploads
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

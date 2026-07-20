@@ -23,6 +23,7 @@ import VerifyPage from "./pages/webinars/VerifyPage";
 import WebinarConfirmedPage from "./pages/webinars/WebinarConfirmedPage";
 import WebinarPaymentAdminIndexPage from "./pages/webinars/WebinarPaymentAdminIndexPage";
 import WebinarPaymentAdminPage from "./pages/webinars/WebinarPaymentAdminPage";
+import AdminContentPage from "./pages/admin/AdminContentPage";
 import { CART_CHECKOUT_ENABLED } from "./config/commerce";
 // import EventsList from "./components/EventList";
 // import SearchInput from "./components/SearchInput";
@@ -58,6 +59,7 @@ function App() {
         <Route path="/webinars/:slug/submitted" element={<WebinarSubmittedPage />} />
         <Route path="/verify" element={<VerifyPage />} />
         <Route path="/webinars/:slug/confirmed" element={<WebinarConfirmedPage />} />
+        <Route path="/admin/content" element={<AdminContentPage />} />
         <Route path="/admin/webinars/payments" element={<WebinarPaymentAdminIndexPage />} />
         <Route path="/admin/webinars/:slug/payments" element={<WebinarPaymentAdminPage />} />
         <Route

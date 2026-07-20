@@ -8,9 +8,11 @@ import paymentsRouter from "./routes/payments.js";
 import webhooksRouter from "./routes/webhooks.js";
 import webinarsRouter from "./routes/webinars.js";
 import authRouter from "./routes/auth.js";
+import contentRouter from "./routes/content.js";
 import { logger } from "./utils/logger.js";
 import { startEmailOutboxWorker } from "./workers/emailOutboxWorker.js";
 import { attachAuthUser } from "./middleware/auth.js";
+import { UPLOADS_DIR } from "./utils/uploads.js";
 
 export const app = express();
 const isProduction = process.env.NODE_ENV === "production";
@@ -106,6 +108,8 @@ app.use("/api/payments", paymentsRouter);
 app.use("/api/webhooks", webhooksRouter);
 app.use("/api", webinarsRouter);
 app.use("/api/auth", authRouter);
+app.use("/api/uploads", express.static(UPLOADS_DIR));
+app.use("/api", contentRouter);
 
 app.post("/api/contact", async (req, res) => {
   const email = String(req.body?.email || "").trim();

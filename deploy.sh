@@ -22,8 +22,8 @@ main() {
   require_cmd npm
   require_cmd pm2
 
-  if [[ ! -f "$ROOT_DIR/.env" ]]; then
-    echo "Missing $ROOT_DIR/.env. Create it from .env.example before deploy." >&2
+  if [[ ! -f "$SERVER_DIR/.env" ]]; then
+    echo "Missing $SERVER_DIR/.env. Create it from $SERVER_DIR/.env.example before deploy." >&2
     exit 1
   fi
 

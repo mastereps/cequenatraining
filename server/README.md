@@ -147,4 +147,4 @@ Database-backed tests for webinar transactions and webhook state transitions rem
 
 ## Deployment Note
 
-`deploy.sh` currently checks for a root `.env`, while backend runtime configuration is loaded from `server/.env`. Resolve that deployment convention before relying on the script in a new environment.
+`deploy.sh` expects backend runtime configuration at `server/.env`, matching `loadEnv.js`. Create that file from `.env.example` before deploying.
