@@ -1,0 +1,64 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Never let two deploys touch the server at once. A queued run waits for the
+# in-flight one instead of racing it through git pull / pm2 restart.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    name: Build and test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: |
+            server/package-lock.json
+            webinar/package-lock.json
+
+      - name: Install backend
+        run: npm --prefix server ci
+
+      - name: Install frontend
+        run: npm --prefix webinar ci
+
+      - name: Test backend
+        run: npm --prefix server test
+
+      - name: Test frontend
+        run: npm --prefix webinar test
+
+      - name: Build frontend
+        run: npm --prefix webinar run build
+
+  deploy:
+    name: Deploy to production
+    needs: verify
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Run deploy.sh over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          command_timeout: 15m
+          script_stops: true
+          script: |
+            set -Eeuo pipefail
+            # git, npm and pm2 are system-installed under /usr/bin on this host,
+            # so they resolve fine in a non-interactive SSH shell.
+            cd /var/www/react_webinar
+            ./deploy.sh
