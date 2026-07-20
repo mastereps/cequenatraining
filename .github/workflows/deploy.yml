@@ -61,6 +61,11 @@ jobs:
             # git, npm and pm2 are system-installed under /usr/bin on this host,
             # so they resolve fine in a non-interactive SSH shell.
             cd /var/www/react_webinar
+            # Pull before invoking the script. deploy.sh pulls too, but by then
+            # bash has already parsed the on-disk copy into memory - so without
+            # this, any edit to deploy.sh would only take effect one deploy
+            # later. The pull inside the script is then a no-op.
+            git pull --ff-only
             # Invoked via `bash` rather than `./deploy.sh` so the run does not
             # depend on the executable bit surviving checkout on every machine.
             bash deploy.sh
