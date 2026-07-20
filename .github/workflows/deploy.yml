@@ -55,10 +55,12 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.SSH_PORT || 22 }}
           command_timeout: 15m
-          script_stops: true
+          script_stop: true
           script: |
             set -Eeuo pipefail
             # git, npm and pm2 are system-installed under /usr/bin on this host,
             # so they resolve fine in a non-interactive SSH shell.
             cd /var/www/react_webinar
-            ./deploy.sh
+            # Invoked via `bash` rather than `./deploy.sh` so the run does not
+            # depend on the executable bit surviving checkout on every machine.
+            bash deploy.sh
