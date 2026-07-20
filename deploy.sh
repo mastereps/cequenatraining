@@ -36,6 +36,12 @@ main() {
   log "Installing frontend dependencies"
   npm --prefix "$WEB_DIR" ci
 
+  # Before the build so a failed migration aborts while the served frontend and
+  # the running backend are both still the previous version. Migrations here are
+  # additive, so the old code tolerates the new schema until the restart.
+  log "Applying database migrations"
+  npm --prefix "$SERVER_DIR" run migrate
+
   log "Building frontend"
   npm --prefix "$WEB_DIR" run build
 
