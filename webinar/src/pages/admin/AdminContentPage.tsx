@@ -87,14 +87,34 @@ const AdminContentPage = () => {
     );
   };
 
-  const toggleVisibility = (sectionKey: string) => {
-    setSections((current) =>
-      current.map((section) =>
-        section.section_key === sectionKey
-          ? { ...section, is_visible: !section.is_visible }
-          : section,
-      ),
-    );
+  // Persists immediately rather than waiting for a save press: the checkbox is
+  // its own control, and there is no save affordance for it outside the Edit
+  // panel. Applied optimistically and reverted if the request fails.
+  const toggleVisibility = async (section: PageSection) => {
+    const nextVisible = !section.is_visible;
+    const setVisible = (value: boolean) =>
+      setSections((current) =>
+        current.map((item) =>
+          item.section_key === section.section_key ? { ...item, is_visible: value } : item,
+        ),
+      );
+
+    setSavingKey(section.section_key);
+    setError(null);
+    setMessage(null);
+    setVisible(nextVisible);
+    try {
+      const saved = await updateSection(page, section.section_key, { is_visible: nextVisible });
+      setSections((current) =>
+        current.map((item) => (item.section_key === saved.section_key ? saved : item)),
+      );
+      setMessage(`"${section.label}" is now ${nextVisible ? "visible" : "hidden"}.`);
+    } catch (saveError) {
+      setVisible(section.is_visible);
+      setError(saveError instanceof Error ? saveError.message : "Unable to update visibility.");
+    } finally {
+      setSavingKey(null);
+    }
   };
 
   const handleSaveSection = async (section: PageSection) => {
@@ -233,7 +253,8 @@ const AdminContentPage = () => {
                       <input
                         type="checkbox"
                         checked={section.is_visible}
-                        onChange={() => toggleVisibility(section.section_key)}
+                        disabled={savingKey === section.section_key}
+                        onChange={() => void toggleVisibility(section)}
                       />
                       Visible
                     </label>
