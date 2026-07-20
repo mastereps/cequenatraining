@@ -12,14 +12,38 @@ UPLOADS_DIR="$APP_DIR/server/uploads"
 # from what the server actually uses. These are the standard libpq variable
 # names (PGHOST/PGPORT/PGUSER/PGPASSWORD/PGDATABASE), so pg_dump picks them up
 # without being passed any connection flags.
+#
+# Read, never source: .env holds values with spaces (SMTP app passwords), which
+# bash would try to execute as commands. This only ever assigns strings.
 if [[ ! -f "$ENV_FILE" ]]; then
   echo "Missing $ENV_FILE" >&2
   exit 1
 fi
-set -a
-# shellcheck disable=SC1090
-. "$ENV_FILE"
-set +a
+
+read_env() {
+  local key="$1" line
+  line="$(grep -E "^[[:space:]]*${key}=" "$ENV_FILE" | tail -n 1 || true)"
+  [[ -n "$line" ]] || return 0
+  line="${line#*=}"
+  line="${line%$'\r'}"
+  # Strip one layer of surrounding quotes if present.
+  if [[ "$line" == \"*\" || "$line" == \'*\' ]]; then
+    line="${line:1:${#line}-2}"
+  fi
+  printf '%s' "$line"
+}
+
+PGHOST="$(read_env PGHOST)"
+PGPORT="$(read_env PGPORT)"
+PGUSER="$(read_env PGUSER)"
+PGPASSWORD="$(read_env PGPASSWORD)"
+PGDATABASE="$(read_env PGDATABASE)"
+export PGHOST PGPORT PGUSER PGPASSWORD PGDATABASE
+
+if [[ -z "$PGDATABASE" ]]; then
+  echo "PGDATABASE not found in $ENV_FILE" >&2
+  exit 1
+fi
 
 BACKUP_NAME="cequena_prod"
 LOCAL_DIR="$HOME/backups/cequena"
