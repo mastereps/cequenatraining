@@ -13,7 +13,17 @@ import {
   submitPaymentProofController,
   verifyRegistrationController,
 } from "../controllers/webinarController.js";
+import {
+  archiveWebinarController,
+  createWebinarController,
+  listAdminWebinarsController,
+  rescheduleWebinarController,
+  restoreWebinarController,
+  updateWebinarController,
+  uploadWebinarImageController,
+} from "../controllers/webinarAdminController.js";
 import { requireAdmin } from "../middleware/auth.js";
+import { singleImageUpload } from "../utils/uploads.js";
 
 const router = express.Router();
 
@@ -29,5 +39,20 @@ router.post("/webinars/:slug/payment-reject", requireAdmin, rejectPaymentProofCo
 router.post("/webinars/:slug/send-zoom-links", requireAdmin, sendZoomLinksController);
 router.get("/verify", verifyRegistrationController);
 router.post("/webinars/:slug/resend-confirmation", resendConfirmationController);
+
+// Webinar management. Keyed by id, not slug, so renaming a slug stays a plain edit.
+router.get("/admin/webinars", requireAdmin, listAdminWebinarsController);
+router.post("/admin/webinars", requireAdmin, createWebinarController);
+router.patch("/admin/webinars/:id", requireAdmin, updateWebinarController);
+router.post("/admin/webinars/:id/reschedule", requireAdmin, rescheduleWebinarController);
+// Archive, not delete - see setWebinarArchived in webinarAdminService.js.
+router.delete("/admin/webinars/:id", requireAdmin, archiveWebinarController);
+router.post("/admin/webinars/:id/restore", requireAdmin, restoreWebinarController);
+router.post(
+  "/admin/webinars/uploads",
+  requireAdmin,
+  singleImageUpload,
+  uploadWebinarImageController,
+);
 
 export default router;

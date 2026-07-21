@@ -6,6 +6,15 @@ export const sanitizeText = (value, maxLength = 5000) => {
   return normalized.slice(0, maxLength);
 };
 
+/** Slugs appear in urls, so keep them to url-safe lowercase words. */
+export const normalizeSlug = (value, maxLength = 120) =>
+  String(value ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, maxLength);
+
 export const normalizeEmail = (value) =>
   String(value ?? "").trim().toLowerCase();
 

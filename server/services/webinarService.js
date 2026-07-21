@@ -82,7 +82,7 @@ const mapPaymentProof = (row) => {
   };
 };
 
-const mapWebinar = (row) => ({
+export const mapWebinar = (row) => ({
   id: row.id,
   slug: row.slug,
   title: row.title,
@@ -106,9 +106,10 @@ const mapWebinar = (row) => ({
   payment_qr_image_url: row.payment_qr_image_url || null,
   payment_instructions: row.payment_instructions || null,
   join_link_delivery_mode: normalizeJoinLinkDeliveryMode(row.join_link_delivery_mode),
+  archived_at: row.archived_at || null,
 });
 
-const webinarSelectSql = `
+export const webinarSelectSql = `
   SELECT
     w.id,
     w.slug,
@@ -127,6 +128,7 @@ const webinarSelectSql = `
     w.payment_instructions,
     w.join_link_delivery_mode,
     w.zoom_join_url,
+    w.archived_at,
     COALESCE(stats.verified_count, 0) AS verified_count,
     CASE
       WHEN w.capacity IS NULL THEN NULL
@@ -145,8 +147,20 @@ const webinarSelectSql = `
   ) stats ON stats.webinar_id = w.id
 `;
 
+/** `upcoming` (default) preserves the original behaviour for callers that send no `when`. */
+export const normalizeWhenFilter = (value) => {
+  const cleaned = String(value ?? "").trim().toLowerCase();
+  return cleaned === "past" || cleaned === "all" ? cleaned : "upcoming";
+};
+
 export const listWebinars = async (filters) => {
-  const clauses = ["w.is_published = true", "w.start_at >= NOW()"];
+  const when = normalizeWhenFilter(filters.when);
+  const clauses = ["w.is_published = true", "w.archived_at IS NULL"];
+  if (when === "upcoming") {
+    clauses.push("w.start_at >= NOW()");
+  } else if (when === "past") {
+    clauses.push("w.start_at < NOW()");
+  }
   const values = [];
 
   if (filters.search) {
@@ -183,10 +197,11 @@ export const listWebinars = async (filters) => {
   const limit = Math.min(Number(filters.limit || 50) || 50, 100);
   values.push(limit);
 
+  // Past webinars read newest-first; upcoming ones read soonest-first.
   const sql = `
     ${webinarSelectSql}
     WHERE ${clauses.join(" AND ")}
-    ORDER BY w.start_at ASC
+    ORDER BY w.start_at ${when === "past" ? "DESC" : "ASC"}
     LIMIT $${values.length}
   `;
 
@@ -200,6 +215,7 @@ export const getWebinarBySlug = async (slug) => {
       ${webinarSelectSql}
       WHERE w.slug = $1
         AND w.is_published = true
+        AND w.archived_at IS NULL
       LIMIT 1
     `,
     [sanitizeText(slug, 150)],
@@ -402,6 +418,7 @@ export const registerForWebinar = async ({ slug, fullName, email, userId, option
         ${webinarSelectSql}
         WHERE w.slug = $1
           AND w.is_published = true
+          AND w.archived_at IS NULL
         FOR UPDATE OF w
       `,
       [sanitizeText(slug, 150)],
@@ -736,6 +753,7 @@ export const createWebinarPaymentSession = async ({ slug, email, userId }) => {
         FROM webinars
         WHERE slug = $1
           AND is_published = true
+          AND archived_at IS NULL
         LIMIT 1
       `,
       [cleanSlug],
@@ -864,6 +882,7 @@ export const submitPaymentProof = async ({
         FROM webinars
         WHERE slug = $1
           AND is_published = true
+          AND archived_at IS NULL
         LIMIT 1
         FOR UPDATE
       `,
@@ -1387,6 +1406,7 @@ export const resendConfirmation = async ({ slug, email, idempotencyKey }) => {
         FROM webinars
         WHERE slug = $1
           AND is_published = true
+          AND archived_at IS NULL
         LIMIT 1
         FOR UPDATE
       `,

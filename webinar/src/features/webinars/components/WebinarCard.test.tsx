@@ -30,12 +30,13 @@ const webinar: Webinar = {
   payment_qr_image_url: null,
   payment_instructions: null,
   join_link_delivery_mode: "manual",
+  archived_at: null,
 };
 
-const renderCard = () =>
+const renderCard = (past = false) =>
   render(
     <MemoryRouter>
-      <WebinarCard webinar={webinar} />
+      <WebinarCard webinar={webinar} past={past} />
     </MemoryRouter>,
   );
 
@@ -51,6 +52,23 @@ describe("WebinarCard", () => {
       "href",
       "/webinars/sample-webinar",
     );
+  });
+
+  it("offers no way to register once the webinar is past", () => {
+    // Even with a live session lock, the archive variant must not surface a
+    // registration call to action for an event that already happened.
+    setSubmittedEmailForWebinar(webinar.slug, "teacher@example.com");
+    setSubmittedStatusForWebinar(webinar.slug, "verified");
+
+    renderCard(true);
+
+    expect(screen.queryByRole("link", { name: "Reserve my spot" })).toBeNull();
+    expect(screen.queryByText("Already registered")).toBeNull();
+    expect(screen.getByRole("link", { name: "View details" })).toHaveAttribute(
+      "href",
+      "/webinars/sample-webinar",
+    );
+    expect(screen.getByText(/attendee/)).toBeInTheDocument();
   });
 
   it("shows the payment review state for verified submissions", () => {

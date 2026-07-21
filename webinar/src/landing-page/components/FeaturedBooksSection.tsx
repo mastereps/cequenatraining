@@ -158,6 +158,8 @@ const FeaturedBooksSection = () => {
           }}
           rewind
           spaceBetween={30}
+          // Fewer books than slidesPerView would otherwise pack them against the left edge.
+          centerInsufficientSlides
           breakpoints={{
             320: { slidesPerView: 1.3, centeredSlides: true },
             640: { slidesPerView: 2 },

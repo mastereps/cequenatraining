@@ -195,6 +195,9 @@ const WebinarDetailPage = () => {
     submittedEmail ? `?email=${encodeURIComponent(submittedEmail)}` : ""
   }`;
 
+  // The server rejects late registrations too; this just stops the page from
+  // offering a seat it cannot sell.
+  const hasConcluded = new Date(webinar.start_at).getTime() < Date.now();
   const scheduleLabel = `${formatManilaDateTime(webinar.start_at)} - ${formatManilaDateTime(webinar.end_at)}`;
   const feeLabel = isPaid ? formatPrice(priceCents, webinar.currency) : "Free webinar";
   const seatLabel = formatSeatLabel(webinar.available_seats);
@@ -269,8 +272,37 @@ const WebinarDetailPage = () => {
             <aside className="space-y-6 xl:sticky xl:top-28 xl:self-start">
               <section className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
-                  Registration & Payment
+                  {hasConcluded ? "This webinar has ended" : "Registration & Payment"}
                 </p>
+
+                {hasConcluded ? (
+                  <div className="mt-3 space-y-5">
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+                      <p className="text-sm font-semibold uppercase tracking-[0.12em]">
+                        Concluded
+                      </p>
+                      <p className="mt-2 text-sm leading-6">
+                        This session ran on {formatManilaDateTime(webinar.start_at)} and is no
+                        longer accepting registrations.
+                      </p>
+                    </div>
+                    <Link
+                      to="/webinars"
+                      className="block rounded-xl border border-slate-300 px-6 py-3 text-center text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-900"
+                    >
+                      Back to webinars
+                    </Link>
+                    {isAdmin ? (
+                      <Link
+                        to={`/admin/webinars/${webinar.slug}/payments`}
+                        className="block rounded-xl border border-emerald-500 px-6 py-3 text-center text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50 dark:border-emerald-400 dark:text-emerald-300 dark:hover:bg-emerald-950/30"
+                      >
+                        Review payments
+                      </Link>
+                    ) : null}
+                  </div>
+                ) : (
+                <>
                 <div className={`mt-3 rounded-2xl border p-4 ${registrationTone}`}>
                   <p className="text-sm font-semibold uppercase tracking-[0.12em]">
                     {registrationTitle}
@@ -349,6 +381,8 @@ const WebinarDetailPage = () => {
                     </Link>
                   ) : null}
                 </div>
+                </>
+                )}
               </section>
 
               {/* <section className="rounded-[24px] border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-900/80">
@@ -388,15 +422,17 @@ const WebinarDetailPage = () => {
               <section className="rounded-[28px] border border-slate-200 bg-[linear-gradient(135deg,rgba(248,250,252,0.98),rgba(233,246,239,0.75))] p-5 dark:border-slate-800 dark:bg-[linear-gradient(135deg,rgba(15,23,42,0.92),rgba(6,78,59,0.45))] sm:p-6">
                 <div className="grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(280px,0.9fr)] lg:items-center">
                   <div className="space-y-4">
-                    <div className="rounded-2xl border border-emerald-200/70 bg-emerald-50/85 p-4 text-emerald-950 dark:border-emerald-900/50 dark:bg-emerald-950/25 dark:text-emerald-50">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
-                        Registration note
-                      </p>
-                      <p className="mt-2 text-sm leading-6">
-                        Scan the QR code to open the registration form and complete the required
-                        Google Form.
-                      </p>
-                    </div>
+                    {!hasConcluded && (
+                      <div className="rounded-2xl border border-emerald-200/70 bg-emerald-50/85 p-4 text-emerald-950 dark:border-emerald-900/50 dark:bg-emerald-950/25 dark:text-emerald-50">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
+                          Registration note
+                        </p>
+                        <p className="mt-2 text-sm leading-6">
+                          Scan the QR code to open the registration form and complete the required
+                          Google Form.
+                        </p>
+                      </div>
+                    )}
 
                     <div className="grid gap-3 sm:grid-cols-2">
                     {quickFacts.map((item) => (

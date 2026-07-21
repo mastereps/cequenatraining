@@ -59,6 +59,7 @@ export const listWebinarsController = async (req, res) => {
       to: req.query.to,
       topic: req.query.topic,
       availability: req.query.availability,
+      when: req.query.when,
       limit: req.query.limit,
     });
 

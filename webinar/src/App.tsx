@@ -26,6 +26,7 @@ import AdminContentPage from "./pages/admin/AdminContentPage";
 import AdminLayout from "./pages/admin/AdminLayout";
 import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
 import AdminBooksPage from "./pages/admin/AdminBooksPage";
+import AdminWebinarsPage from "./pages/admin/AdminWebinarsPage";
 import AdminPlaceholderPage from "./pages/admin/AdminPlaceholderPage";
 import RequireRole from "./components/RequireRole";
 import { isAdminUser, isSuperAdmin } from "./features/auth/roles";
@@ -78,7 +79,7 @@ function App() {
           />
           <Route path="webinars/payments" element={<WebinarPaymentAdminIndexPage />} />
           <Route path="webinars/:slug/payments" element={<WebinarPaymentAdminPage />} />
-          <Route path="webinars" element={<AdminPlaceholderPage title="Webinars" />} />
+          <Route path="webinars" element={<AdminWebinarsPage />} />
           <Route path="events" element={<AdminPlaceholderPage title="Events" />} />
           <Route path="registrations" element={<AdminPlaceholderPage title="Registrations" />} />
           <Route path="orders" element={<AdminPlaceholderPage title="Orders" />} />

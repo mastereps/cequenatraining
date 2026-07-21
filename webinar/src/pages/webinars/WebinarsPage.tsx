@@ -27,6 +27,7 @@ const WebinarsPage = () => {
   const [to, setTo] = useState("");
   const [topic, setTopic] = useState("");
   const [availability, setAvailability] = useState("");
+  const [when, setWhen] = useState<"upcoming" | "past">("upcoming");
   const [webinars, setWebinars] = useState<Webinar[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -92,9 +93,15 @@ const WebinarsPage = () => {
         from,
         to,
         topic,
-        availability,
+        // Availability only means something while a seat can still be taken.
+        availability: when === "past" ? "" : availability,
+        when,
       });
-      await syncSubmittedLocks(data);
+      // Finished webinars have no registration call to action, so the per-card
+      // status lookups those locks feed are skipped entirely.
+      if (when !== "past") {
+        await syncSubmittedLocks(data);
+      }
       setWebinars(data);
     } catch (loadError) {
       const message =
@@ -108,7 +115,7 @@ const WebinarsPage = () => {
   useEffect(() => {
     void loadWebinars();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  }, [user, when]);
 
   const handleFilterSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -117,22 +124,49 @@ const WebinarsPage = () => {
 
   const resultCountLabel = useMemo(() => {
     if (loading) return "Loading webinars...";
-    if (webinars.length === 0) return "No webinars found.";
+    if (webinars.length === 0) {
+      return when === "past" ? "No past webinars yet." : "No webinars found.";
+    }
     if (webinars.length === 1) return "1 webinar found.";
     return `${webinars.length} webinars found.`;
-  }, [loading, webinars.length]);
+  }, [loading, webinars.length, when]);
 
   return (
     <main className="mx-auto mt-28 max-w-[1240px] px-4 pb-20">
       <header className="mb-10 text-center">
         <p className="headline-gradient mb-2 font-text text-lg font-bold uppercase tracking-[0.08em]">
-          Upcoming sessions
+          {when === "past" ? "Past sessions" : "Upcoming sessions"}
         </p>
         <h1 className="font-heading text-5xl uppercase">Webinars</h1>
         <p className="mt-4 text-slate-600 dark:text-slate-300">
-          Browse and reserve your seat. All schedules are displayed in Asia/Manila time.
+          {when === "past"
+            ? "A look back at the sessions we have already run. All schedules are displayed in Asia/Manila time."
+            : "Browse and reserve your seat. All schedules are displayed in Asia/Manila time."}
         </p>
       </header>
+
+      <div
+        role="tablist"
+        aria-label="Webinar timeframe"
+        className="mb-6 flex justify-center gap-2"
+      >
+        {(["upcoming", "past"] as const).map((option) => (
+          <button
+            key={option}
+            type="button"
+            role="tab"
+            aria-selected={when === option}
+            onClick={() => setWhen(option)}
+            className={`rounded px-5 py-2 font-text text-sm font-bold uppercase tracking-[0.08em] transition ${
+              when === option
+                ? "bg-lantern text-white"
+                : "border border-slate-300 text-slate-600 hover:bg-slate-100 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-800"
+            }`}
+          >
+            {option === "upcoming" ? "Upcoming" : "Past"}
+          </button>
+        ))}
+      </div>
 
       <form
         onSubmit={handleFilterSubmit}
@@ -172,16 +206,18 @@ const WebinarsPage = () => {
             </option>
           ))}
         </select>
-        <select
-          value={availability}
-          onChange={(event) => setAvailability(event.target.value)}
-          className="rounded border border-slate-300 px-3 py-2 dark:border-slate-600 dark:bg-slate-800"
-          aria-label="Availability"
-        >
-          <option value="">All availability</option>
-          <option value="open">Open</option>
-          <option value="full">Full</option>
-        </select>
+        {when === "upcoming" && (
+          <select
+            value={availability}
+            onChange={(event) => setAvailability(event.target.value)}
+            className="rounded border border-slate-300 px-3 py-2 dark:border-slate-600 dark:bg-slate-800"
+            aria-label="Availability"
+          >
+            <option value="">All availability</option>
+            <option value="open">Open</option>
+            <option value="full">Full</option>
+          </select>
+        )}
         <button
           type="submit"
           className="rounded bg-slate-900 px-3 py-2 font-semibold text-white transition hover:bg-slate-700 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-300"
@@ -199,7 +235,7 @@ const WebinarsPage = () => {
       {!loading && !error ? (
         <section className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           {webinars.map((webinar) => (
-            <WebinarCard key={webinar.id} webinar={webinar} />
+            <WebinarCard key={webinar.id} webinar={webinar} past={when === "past"} />
           ))}
         </section>
       ) : null}

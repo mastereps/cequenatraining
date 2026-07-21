@@ -1,5 +1,6 @@
 import { pool, query } from "../db.js";
 import { AppError } from "../utils/errors.js";
+import { normalizeSlug } from "../utils/validation.js";
 
 const BOOK_COLUMNS = `
   id,
@@ -19,14 +20,8 @@ const BOOK_COLUMNS = `
 const REGIONS = new Set(["local", "international"]);
 const CHANNELS = new Set(["marketplace", "publisher-direct"]);
 
-/** Slugs appear in /products/:slug, so keep them to url-safe lowercase words. */
-export const normalizeSlug = (value) =>
-  String(value ?? "")
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 120);
+// Re-exported so /products/:slug callers and the existing tests keep their import site.
+export { normalizeSlug };
 
 const trimmed = (value, maxLength) => String(value ?? "").trim().slice(0, maxLength);
 

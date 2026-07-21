@@ -23,6 +23,8 @@ export interface WebinarFilters {
   to?: string;
   topic?: string;
   availability?: string;
+  /** Defaults to `upcoming` server-side when omitted. */
+  when?: "upcoming" | "past" | "all";
   limit?: number;
 }
 

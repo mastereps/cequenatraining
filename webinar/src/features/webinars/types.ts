@@ -39,6 +39,8 @@ export interface Webinar {
   payment_qr_image_url: string | null;
   payment_instructions: string | null;
   join_link_delivery_mode: "auto" | "manual";
+  /** Set only on archived webinars, which the public endpoints never return. */
+  archived_at: string | null;
 }
 
 export interface WebinarListResponse {

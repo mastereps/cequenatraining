@@ -91,3 +91,29 @@ test("protected payment routes reject anonymous requests", async () => {
     },
   );
 });
+
+test("webinar management routes reject anonymous requests", async () => {
+  const unauthorized = { status: 401, body: { error: "Authentication required." } };
+
+  assert.deepEqual(await requestJson("/api/admin/webinars"), unauthorized);
+  assert.deepEqual(
+    await requestJson("/api/admin/webinars", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: "Anything" }),
+    }),
+    unauthorized,
+  );
+  assert.deepEqual(
+    await requestJson("/api/admin/webinars/some-id", { method: "DELETE" }),
+    unauthorized,
+  );
+  assert.deepEqual(
+    await requestJson("/api/admin/webinars/some-id/reschedule", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ start_at: "2027-01-01T00:00:00Z" }),
+    }),
+    unauthorized,
+  );
+});

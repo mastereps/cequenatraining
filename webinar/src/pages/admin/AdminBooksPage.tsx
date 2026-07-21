@@ -12,6 +12,7 @@ import {
   uploadBookCover,
   type BookInput,
 } from "../../features/books/adminApi";
+import ConfirmDialog from "./ConfirmDialog";
 
 type FormState = {
   title: string;
@@ -69,6 +70,7 @@ const AdminBooksPage = () => {
   const [uploading, setUploading] = useState(false);
   const [busyId, setBusyId] = useState<number | null>(null);
   const [showArchived, setShowArchived] = useState(false);
+  const [confirming, setConfirming] = useState<Book | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -85,6 +87,13 @@ const AdminBooksPage = () => {
   useEffect(() => {
     void load();
   }, []);
+
+  // Success messages clear themselves; errors stay until dismissed or replaced.
+  useEffect(() => {
+    if (!message) return;
+    const timer = setTimeout(() => setMessage(null), 4000);
+    return () => clearTimeout(timer);
+  }, [message]);
 
   const visibleBooks = useMemo(
     () => books.filter((book) => showArchived || book.is_active !== false),
@@ -186,16 +195,17 @@ const AdminBooksPage = () => {
     }
   };
 
-  const handleArchive = async (book: Book) => {
-    const archiving = book.is_active !== false;
-    if (
-      archiving &&
-      !window.confirm(
-        `Archive "${book.title}"? It disappears from the storefront right away. Past orders keep it, and you can restore it later.`,
-      )
-    ) {
+  // Archiving is the destructive direction, so it asks first; restoring does not.
+  const requestArchive = (book: Book) => {
+    if (book.is_active !== false) {
+      setConfirming(book);
       return;
     }
+    void handleArchive(book);
+  };
+
+  const handleArchive = async (book: Book) => {
+    const archiving = book.is_active !== false;
 
     setBusyId(book.id);
     setError(null);
@@ -210,6 +220,7 @@ const AdminBooksPage = () => {
       );
     } finally {
       setBusyId(null);
+      setConfirming(null);
     }
   };
 
@@ -244,10 +255,29 @@ const AdminBooksPage = () => {
       </header>
 
       {error && (
-        <div className="mb-4 rounded border border-red-200 bg-red-50 p-4 text-red-700">{error}</div>
+        <div className="mb-4 flex items-start gap-3 rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-700 animate-[admin-pop-in_180ms_ease-out] dark:text-red-300">
+          <span aria-hidden="true" className="text-base leading-none">
+            ⚠
+          </span>
+          <p className="flex-1">{error}</p>
+          <button
+            type="button"
+            onClick={() => setError(null)}
+            aria-label="Dismiss error"
+            className="cursor-pointer leading-none opacity-60 transition hover:opacity-100"
+          >
+            ✕
+          </button>
+        </div>
       )}
       {message && (
-        <div className="mb-4 rounded border border-green-200 bg-green-50 p-4 text-green-700">
+        <div
+          role="status"
+          className="mb-4 flex items-center gap-3 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm font-medium text-emerald-700 animate-[admin-pop-in_180ms_ease-out] dark:text-emerald-300"
+        >
+          <span aria-hidden="true" className="text-base leading-none">
+            ✓
+          </span>
           {message}
         </div>
       )}
@@ -528,15 +558,19 @@ const AdminBooksPage = () => {
                         <button
                           type="button"
                           onClick={() => openEdit(book)}
-                          className="rounded border border-slate-300 px-3 py-1 text-xs font-semibold dark:border-white/10"
+                          className="cursor-pointer rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold transition hover:bg-slate-100 dark:border-white/10 dark:hover:bg-white/5"
                         >
                           Edit
                         </button>
                         <button
                           type="button"
-                          onClick={() => void handleArchive(book)}
+                          onClick={() => requestArchive(book)}
                           disabled={busyId === book.id}
-                          className="rounded border border-slate-300 px-3 py-1 text-xs font-semibold text-red-600 disabled:opacity-50 dark:border-white/10"
+                          className={`cursor-pointer rounded-lg border px-3 py-1.5 text-xs font-semibold transition disabled:opacity-50 ${
+                            archived
+                              ? "border-slate-300 hover:bg-slate-100 dark:border-white/10 dark:hover:bg-white/5"
+                              : "border-red-500/30 text-red-600 hover:bg-red-500/10 dark:text-red-400"
+                          }`}
                         >
                           {archived ? "Restore" : "Archive"}
                         </button>
@@ -548,6 +582,17 @@ const AdminBooksPage = () => {
             </tbody>
           </table>
         </div>
+      )}
+
+      {confirming && (
+        <ConfirmDialog
+          title={`Archive "${confirming.title}"?`}
+          body="It disappears from the storefront right away. Past orders keep it, and you can restore it later from this page."
+          confirmLabel="Archive book"
+          busy={busyId === confirming.id}
+          onConfirm={() => void handleArchive(confirming)}
+          onCancel={() => setConfirming(null)}
+        />
       )}
     </main>
   );

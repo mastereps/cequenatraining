@@ -99,6 +99,30 @@ const renderTemplate = (templateKey, payload) => {
     };
   }
 
+  if (templateKey === "webinar.rescheduled") {
+    const schedule = toManilaDateTime(payload.webinar_start_at);
+    const previousSchedule = toManilaDateTime(payload.previous_start_at);
+    return {
+      subject: `New schedule: ${payload.webinar_title}`,
+      text: [
+        `Hi ${payload.full_name},`,
+        "",
+        `"${payload.webinar_title}" has been moved to a new schedule.`,
+        `Previously: ${previousSchedule} (${payload.previous_timezone || "Asia/Manila"})`,
+        `Now: ${schedule} (${payload.webinar_timezone || "Asia/Manila"})`,
+        "",
+        "Your registration carries over - there is nothing you need to do.",
+      ].join("\n"),
+      html: `
+        <p>Hi ${escapeHtml(payload.full_name)},</p>
+        <p><strong>${escapeHtml(payload.webinar_title)}</strong> has been moved to a new schedule.</p>
+        <p><strong>Previously:</strong> <s>${escapeHtml(previousSchedule)} (${escapeHtml(payload.previous_timezone || "Asia/Manila")})</s></p>
+        <p><strong>Now:</strong> ${escapeHtml(schedule)} (${escapeHtml(payload.webinar_timezone || "Asia/Manila")})</p>
+        <p>Your registration carries over - there is nothing you need to do.</p>
+      `,
+    };
+  }
+
   if (templateKey === "webinar.payment_received") {
     const schedule = toManilaDateTime(payload.webinar_start_at);
     const amount = formatCurrency(payload.amount_cents, payload.currency || "PHP");
