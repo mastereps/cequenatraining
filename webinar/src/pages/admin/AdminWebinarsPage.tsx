@@ -660,7 +660,6 @@ const AdminWebinarsPage = () => {
                   >
                     <td className="px-4 py-3">
                       <p className="font-semibold">{webinar.title}</p>
-                      <p className="text-xs text-slate-400">/webinars/{webinar.slug}</p>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       {formatManilaDateTime(webinar.start_at)}
