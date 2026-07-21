@@ -48,7 +48,6 @@ const AdminContentPage = () => {
   useEffect(() => {
     if (!isAdmin) return;
     void load(page);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, isAdmin]);
 
   const move = (index: number, direction: -1 | 1) => {

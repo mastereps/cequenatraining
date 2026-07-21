@@ -1,18 +1,14 @@
 import "../loadEnv.js";
 import crypto from "crypto";
+import { resolveSecret } from "./secrets.js";
 
 const isProduction = process.env.NODE_ENV === "production";
 
 const authCookieName = process.env.AUTH_COOKIE_NAME || "app_session";
 const sessionTtlSeconds = Math.max(Number(process.env.AUTH_SESSION_TTL_SECONDS || 604800) || 0, 300);
-const sessionSecret = process.env.AUTH_SESSION_SECRET || null;
-
-if (!sessionSecret && isProduction) {
-  throw new Error("Missing AUTH_SESSION_SECRET in production.");
-}
-
-const fallbackSecret = "local-dev-auth-session-secret";
-const resolvedSessionSecret = sessionSecret || fallbackSecret;
+const resolvedSessionSecret = resolveSecret("AUTH_SESSION_SECRET", {
+  label: "Signed-in sessions",
+});
 
 const encode = (value) => Buffer.from(value, "utf8").toString("base64url");
 const decode = (value) => Buffer.from(value, "base64url").toString("utf8");

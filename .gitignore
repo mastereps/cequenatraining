@@ -35,9 +35,8 @@ fullstack_testv3_20_01_2026.sql
 fullstack_testv4_Altered.sql
 migration_20260120_add_payments.sql
 
-fullstack_testv5.sql
-fullstack_testv6.sql
-server/migrations/20260204_webinar_registration_system.sql
+# Database dumps contain real user emails and password hashes - never commit them.
+fullstack_test*.sql
 API_CONTRACTS.md
 DB_SCHEMA.md
 PROJECT_CONTEXT.md

@@ -1,16 +1,12 @@
 import "../loadEnv.js";
 import crypto from "crypto";
+import { resolveSecret } from "./secrets.js";
 
 const VERIFY_TOKEN_BYTES = 32;
 
-const isProduction = process.env.NODE_ENV === "production";
-const tokenSecret = process.env.VERIFY_TOKEN_SECRET || null;
-
-if (!tokenSecret && isProduction) {
-  throw new Error("Missing VERIFY_TOKEN_SECRET in production.");
-}
-
-const resolvedTokenSecret = tokenSecret || "local-dev-secret";
+const resolvedTokenSecret = resolveSecret("VERIFY_TOKEN_SECRET", {
+  label: "Pending verification links",
+});
 
 export const generateVerificationToken = () =>
   crypto.randomBytes(VERIFY_TOKEN_BYTES).toString("base64url");

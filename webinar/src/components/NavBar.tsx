@@ -35,12 +35,6 @@ const NavBar = () => {
     localStorage.setItem("theme", next);
   }, [isDark]);
 
-  // const [isDark, setDark] = useState(false);
-
-  // useEffect(() => {
-  //   document.documentElement.classList.toggle("dark", isDark);
-  // }, [isDark]);
-
   const toggleTheme = () => {
     setDark(!isDark);
   };

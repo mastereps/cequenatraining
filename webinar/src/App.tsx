@@ -1,4 +1,3 @@
-// import LoginForm from "./components/LoginForm";
 import { useEffect } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import NavBar from "./components/NavBar";
@@ -30,10 +29,6 @@ import AdminPlaceholderPage from "./pages/admin/AdminPlaceholderPage";
 import RequireRole from "./components/RequireRole";
 import { isAdminUser, isSuperAdmin } from "./features/auth/roles";
 import { CART_CHECKOUT_ENABLED } from "./config/commerce";
-// import EventsList from "./components/EventList";
-// import SearchInput from "./components/SearchInput";
-// import { useState } from "react";
-
 const ScrollToTop = () => {
   const { pathname } = useLocation();
 
@@ -45,10 +40,6 @@ const ScrollToTop = () => {
 };
 
 function App() {
-  // const [searchText, setSearchText] = useState("");
-  // const [topic, setTopic] = useState("All");
-  // const [order, setOrder] = useState("dateAsc");
-
   // The admin area brings its own shell, so the marketing chrome is skipped there.
   const isAdminArea = useLocation().pathname.startsWith("/admin");
 

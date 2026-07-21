@@ -1,6 +1,7 @@
 import "./loadEnv.js";
 import express from "express";
 import cors from "cors";
+import helmet from "helmet";
 import nodemailer from "nodemailer";
 import { pathToFileURL } from "url";
 import { query, pool } from "./db.js"; // keep .js if db.js is still JS
@@ -13,6 +14,7 @@ import adminRouter from "./routes/admin.js";
 import { logger } from "./utils/logger.js";
 import { startEmailOutboxWorker } from "./workers/emailOutboxWorker.js";
 import { attachAuthUser } from "./middleware/auth.js";
+import { contactLimiter } from "./middleware/rateLimit.js";
 import { UPLOADS_DIR } from "./utils/uploads.js";
 
 export const app = express();
@@ -22,7 +24,17 @@ const allowedCorsOrigins = String(process.env.CORS_ORIGINS || "")
   .map((origin) => origin.trim())
   .filter(Boolean);
 
+// Behind nginx/pm2 the client IP arrives in X-Forwarded-For; without this the
+// rate limiters would bucket every request under the proxy's address.
+app.set("trust proxy", 1);
+
 // middleware
+app.use(
+  helmet({
+    // Images are served cross-origin to the Vite dev server and the built frontend.
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+  }),
+);
 app.use(
   cors({
     credentials: true,
@@ -32,8 +44,11 @@ app.use(
         return callback(null, true);
       }
 
+      // With no allowlist configured, only local dev origins are accepted -
+      // reflecting an arbitrary origin while credentials are enabled would let
+      // any site read authenticated responses.
       if (allowedCorsOrigins.length === 0) {
-        return callback(null, !isProduction);
+        return callback(null, /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin));
       }
 
       return callback(null, allowedCorsOrigins.includes(origin));
@@ -113,7 +128,7 @@ app.use("/api/uploads", express.static(UPLOADS_DIR));
 app.use("/api", contentRouter);
 app.use("/api", adminRouter);
 
-app.post("/api/contact", async (req, res) => {
+app.post("/api/contact", contactLimiter, async (req, res) => {
   const email = String(req.body?.email || "").trim();
   const message = String(req.body?.message || "").trim();
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -658,47 +673,6 @@ app.post("/api/cart/:cartId/checkout", async (req, res) => {
     client.release();
   }
 });
-
-// // NEW: get one event card by id
-// app.get("/api/events/:id", async (req, res) => {
-//   const { id } = req.params;
-//   const idNum = Number(id);
-
-//   if (!Number.isInteger(idNum) || idNum <= 0) {
-//     return res.status(400).json({ error: "Invalid event id" });
-//   }
-
-//   try {
-//     const result = await query(
-//       `
-//       SELECT
-//         id,
-//         banner_image_url,
-//         title,
-//         description,
-//         event_date,
-//         start_time,
-//         end_time,
-//         cta_label,
-//         cta_url,
-//         duration_hours
-//       FROM events
-//       WHERE id = $1
-//       LIMIT 1
-//       `,
-//       [idNum]
-//     );
-
-//     if (result.rows.length === 0) {
-//       return res.status(404).json({ error: "Event not found" });
-//     }
-
-//     res.json(result.rows[0]);
-//   } catch (err) {
-//     console.error("Error fetching event:", err);
-//     res.status(500).json({ error: "Database error" });
-//   }
-// });
 
 export const startServer = ({ port = process.env.PORT || 5001 } = {}) => {
   const stopEmailOutboxWorker = startEmailOutboxWorker();

@@ -2,6 +2,8 @@ import {
   getAuthSessionCookieName,
   readAuthSessionToken,
 } from "../utils/authSession.js";
+import { pool } from "../db.js";
+import { logger } from "../utils/logger.js";
 
 const parseCookies = (cookieHeader) => {
   const entries = String(cookieHeader || "")
@@ -17,13 +19,49 @@ const parseCookies = (cookieHeader) => {
   return Object.fromEntries(entries);
 };
 
-export const attachAuthUser = (req, _res, next) => {
-  const cookies = parseCookies(req.headers.cookie);
-  const cookieName = getAuthSessionCookieName();
-  const token = cookies[cookieName];
+/**
+ * Authenticates the signed cookie, then refreshes the identity from the database.
+ *
+ * The cookie payload carries a role, but it is only as fresh as the last login -
+ * trusting it would let a demoted admin keep access until the cookie expired.
+ * The row is the authority: a deleted user or a failed lookup is treated as
+ * anonymous rather than falling back to the cookie's claim.
+ */
+/** Verified session claims from the request cookie, or null. Does not touch the DB. */
+export const readSessionFromRequest = (req) => {
+  const cookies = parseCookies(req?.headers?.cookie);
+  const token = cookies[getAuthSessionCookieName()];
+  return token ? readAuthSessionToken(token) : null;
+};
 
-  req.authUser = token ? readAuthSessionToken(token) : null;
-  next();
+export const attachAuthUser = async (req, _res, next) => {
+  const session = readSessionFromRequest(req);
+
+  if (!session) {
+    req.authUser = null;
+    return next();
+  }
+
+  try {
+    const { rows } = await pool.query(
+      "SELECT id, name, email, role FROM users WHERE id = $1 LIMIT 1",
+      [session.id],
+    );
+    const row = rows[0];
+    req.authUser = row
+      ? {
+          id: Number(row.id),
+          name: row.name || "",
+          email: row.email || "",
+          role: row.role || "customer",
+        }
+      : null;
+  } catch (error) {
+    logger.error("auth_session_lookup_failed", { error });
+    req.authUser = null;
+  }
+
+  return next();
 };
 
 export const requireAuth = (req, res, next) => {
