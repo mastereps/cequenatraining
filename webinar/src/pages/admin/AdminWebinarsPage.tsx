@@ -352,6 +352,70 @@ const AdminWebinarsPage = () => {
     }
   };
 
+  const renderStatus = (webinar: AdminWebinar, archived: boolean) => (
+    <div className="flex flex-wrap items-start gap-1">
+      <span
+        className={`${pillClass} ${
+          webinar.is_published
+            ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+            : "bg-slate-500/15 text-slate-500"
+        }`}
+      >
+        {webinar.is_published ? "Published" : "Draft"}
+      </span>
+      {!archived && webinar.registration_open && (
+        <span className={`${pillClass} bg-sky-500/15 text-sky-600 dark:text-sky-400`}>Open</span>
+      )}
+      {webinar.is_full && (
+        <span className={`${pillClass} bg-amber-500/15 text-amber-600`}>Full</span>
+      )}
+      {archived && (
+        <span className={`${pillClass} bg-red-500/15 text-red-600 dark:text-red-400`}>
+          Archived
+        </span>
+      )}
+    </div>
+  );
+
+  const renderActions = (webinar: AdminWebinar, archived: boolean) => (
+    <>
+      <button type="button" onClick={() => openEdit(webinar)} className={actionBtnClass}>
+        <AiOutlineEdit aria-hidden="true" className="text-sm" />
+        Edit
+      </button>
+      <button type="button" onClick={() => openReschedule(webinar)} className={actionBtnClass}>
+        <AiOutlineHistory aria-hidden="true" className="text-sm" />
+        Reschedule
+      </button>
+      <Link to={`/admin/webinars/${webinar.slug}/payments`} className={actionBtnClass}>
+        <AiOutlineCreditCard aria-hidden="true" className="text-sm" />
+        Payments
+      </Link>
+      <button
+        type="button"
+        onClick={() =>
+          archived ? void handleArchiveToggle(webinar) : setConfirming(webinar)
+        }
+        disabled={busyId === webinar.id}
+        className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition disabled:opacity-50 ${
+          archived
+            ? "border-slate-300 hover:bg-slate-100 dark:border-white/10 dark:hover:bg-white/5"
+            : "border-red-500/30 text-red-600 hover:bg-red-500/10 dark:text-red-400"
+        }`}
+      >
+        {archived ? (
+          <AiOutlineUndo aria-hidden="true" className="text-sm" />
+        ) : (
+          <AiOutlineDelete aria-hidden="true" className="text-sm" />
+        )}
+        {archived ? "Restore" : "Archive"}
+      </button>
+    </>
+  );
+
+  const renderSeats = (webinar: AdminWebinar) =>
+    `${webinar.verified_count}${webinar.capacity === null ? " / ∞" : ` / ${webinar.capacity}`}`;
+
   return (
     <main>
       <header className="mb-6 flex flex-wrap items-center justify-between gap-4">
@@ -681,132 +745,115 @@ const AdminWebinarsPage = () => {
           </button>
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white dark:border-white/10 dark:bg-[#0b1220]">
-          <table className="w-full text-left text-sm">
-            <thead className="border-b border-slate-200 text-xs uppercase tracking-[0.08em] text-slate-500 dark:border-white/10">
-              <tr>
-                <th className="px-4 py-3">Webinar</th>
-                <th className="px-4 py-3">Schedule</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Seats</th>
-                <th className="px-4 py-3">Price</th>
-                <th className="px-4 py-3 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {visible.map((webinar) => {
-                const archived = Boolean(webinar.archived_at);
-                return (
-                  <tr
-                    key={webinar.id}
-                    className={`border-b border-slate-100 last:border-0 dark:border-white/5 ${
-                      archived ? "opacity-50" : ""
-                    }`}
-                  >
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-3">
-                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500 dark:bg-white/5 dark:text-slate-300">
-                          <AiOutlineVideoCamera aria-hidden="true" />
+        <>
+          {/* Desktop: table. Below lg (where the sidebar also collapses), the rows
+              reflow into cards so nothing hides behind a horizontal scrollbar. */}
+          <div className="hidden overflow-hidden rounded-lg border border-slate-200 bg-white lg:block dark:border-white/10 dark:bg-[#0b1220]">
+            <table className="w-full text-left text-sm">
+              <thead className="border-b border-slate-200 text-xs uppercase tracking-[0.08em] text-slate-500 dark:border-white/10">
+                <tr>
+                  <th className="px-4 py-3">Webinar</th>
+                  <th className="px-4 py-3">Schedule</th>
+                  <th className="px-4 py-3">Status</th>
+                  <th className="px-4 py-3">Seats</th>
+                  <th className="px-4 py-3">Price</th>
+                  <th className="px-4 py-3 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {visible.map((webinar) => {
+                  const archived = Boolean(webinar.archived_at);
+                  return (
+                    <tr
+                      key={webinar.id}
+                      className={`border-b border-slate-100 last:border-0 dark:border-white/5 ${
+                        archived ? "opacity-50" : ""
+                      }`}
+                    >
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500 dark:bg-white/5 dark:text-slate-300">
+                            <AiOutlineVideoCamera aria-hidden="true" />
+                          </span>
+                          <p className="font-semibold">{webinar.title}</p>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <span className="flex items-center gap-2">
+                          <AiOutlineCalendar aria-hidden="true" className="text-slate-400" />
+                          {formatManilaDateTime(webinar.start_at)}
                         </span>
-                        <p className="font-semibold">{webinar.title}</p>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <span className="flex items-center gap-2">
+                        <span className="mt-0.5 block pl-6 text-xs text-slate-400">
+                          {webinar.timezone}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">{renderStatus(webinar, archived)}</td>
+                      <td className="px-4 py-3 whitespace-nowrap">{renderSeats(webinar)}</td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        {formatPesos(webinar.price_cents)}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-wrap justify-end gap-2">
+                          {renderActions(webinar, archived)}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Tablet / mobile: stacked cards. */}
+          <div className="grid gap-3 lg:hidden">
+            {visible.map((webinar) => {
+              const archived = Boolean(webinar.archived_at);
+              return (
+                <div
+                  key={webinar.id}
+                  className={`rounded-lg border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-[#0b1220] ${
+                    archived ? "opacity-60" : ""
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500 dark:bg-white/5 dark:text-slate-300">
+                      <AiOutlineVideoCamera aria-hidden="true" />
+                    </span>
+                    <p className="flex-1 font-semibold leading-snug">{webinar.title}</p>
+                    {renderStatus(webinar, archived)}
+                  </div>
+
+                  <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                    <div className="col-span-2">
+                      <dt className="text-xs uppercase tracking-[0.08em] text-slate-400">
+                        Schedule
+                      </dt>
+                      <dd className="mt-0.5 flex items-center gap-2">
                         <AiOutlineCalendar aria-hidden="true" className="text-slate-400" />
-                        {formatManilaDateTime(webinar.start_at)}
-                      </span>
-                      <span className="mt-0.5 block pl-6 text-xs text-slate-400">
-                        {webinar.timezone}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex flex-col items-start gap-1">
-                        <span
-                          className={`${pillClass} ${
-                            webinar.is_published
-                              ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
-                              : "bg-slate-500/15 text-slate-500"
-                          }`}
-                        >
-                          {webinar.is_published ? "Published" : "Draft"}
+                        <span>
+                          {formatManilaDateTime(webinar.start_at)}
+                          <span className="block text-xs text-slate-400">{webinar.timezone}</span>
                         </span>
-                        {!archived && webinar.registration_open && (
-                          <span className={`${pillClass} bg-sky-500/15 text-sky-600 dark:text-sky-400`}>
-                            Open
-                          </span>
-                        )}
-                        {webinar.is_full && (
-                          <span className={`${pillClass} bg-amber-500/15 text-amber-600`}>
-                            Full
-                          </span>
-                        )}
-                        {archived && (
-                          <span className={`${pillClass} bg-red-500/15 text-red-600 dark:text-red-400`}>
-                            Archived
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      {webinar.verified_count}
-                      {webinar.capacity === null ? " / ∞" : ` / ${webinar.capacity}`}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      {formatPesos(webinar.price_cents)}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex flex-wrap justify-end gap-2">
-                        <button
-                          type="button"
-                          onClick={() => openEdit(webinar)}
-                          className={actionBtnClass}
-                        >
-                          <AiOutlineEdit aria-hidden="true" className="text-sm" />
-                          Edit
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => openReschedule(webinar)}
-                          className={actionBtnClass}
-                        >
-                          <AiOutlineHistory aria-hidden="true" className="text-sm" />
-                          Reschedule
-                        </button>
-                        <Link
-                          to={`/admin/webinars/${webinar.slug}/payments`}
-                          className={actionBtnClass}
-                        >
-                          <AiOutlineCreditCard aria-hidden="true" className="text-sm" />
-                          Payments
-                        </Link>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            archived ? void handleArchiveToggle(webinar) : setConfirming(webinar)
-                          }
-                          disabled={busyId === webinar.id}
-                          className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition disabled:opacity-50 ${
-                            archived
-                              ? "border-slate-300 hover:bg-slate-100 dark:border-white/10 dark:hover:bg-white/5"
-                              : "border-red-500/30 text-red-600 hover:bg-red-500/10 dark:text-red-400"
-                          }`}
-                        >
-                          {archived ? (
-                            <AiOutlineUndo aria-hidden="true" className="text-sm" />
-                          ) : (
-                            <AiOutlineDelete aria-hidden="true" className="text-sm" />
-                          )}
-                          {archived ? "Restore" : "Archive"}
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs uppercase tracking-[0.08em] text-slate-400">Seats</dt>
+                      <dd className="mt-0.5">{renderSeats(webinar)}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs uppercase tracking-[0.08em] text-slate-400">Price</dt>
+                      <dd className="mt-0.5">{formatPesos(webinar.price_cents)}</dd>
+                    </div>
+                  </dl>
+
+                  <div className="mt-4 flex flex-wrap gap-2 border-t border-slate-100 pt-3 dark:border-white/5">
+                    {renderActions(webinar, archived)}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </>
       )}
 
       {rescheduling && (
