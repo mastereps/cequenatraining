@@ -6,6 +6,7 @@ import FeaturedBooksSection from "../../landing-page/components/FeaturedBooksSec
 import LatestEvents from "../../landing-page/components/LatestEvents";
 import Credibility from "../../landing-page/components/Credibility";
 import WhoWeAre from "../../components/WhoWeAre";
+import Reveal from "../../components/Reveal";
 import AboutHero from "../../pages/about/AboutHero";
 import AboutBody from "../../pages/about/AboutBody";
 import AboutStats from "../../pages/about/AboutStats";
@@ -94,15 +95,15 @@ export const PageSections = ({ page }: { page: ContentPage }) => {
         const rendered = <Component content={section.content} />;
         if (contained) {
           return (
-            <div
+            <Reveal
               key={section.id}
               className="mx-auto max-w-[1280px] px-4 py-6 sm:px-6 lg:px-8"
             >
               {rendered}
-            </div>
+            </Reveal>
           );
         }
-        return <div key={section.id}>{rendered}</div>;
+        return <Reveal key={section.id}>{rendered}</Reveal>;
       })}
     </>
   );
