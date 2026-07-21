@@ -24,6 +24,8 @@ const FeaturedBooksSection = () => {
   const [modalLoading, setModalLoading] = useState(false);
   const [modalError, setModalError] = useState<string | null>(null);
   const [navReady, setNavReady] = useState(false);
+  // Swiper locks itself when every slide already fits; the arrows would be dead controls.
+  const [locked, setLocked] = useState(false);
   const prevRef = useRef<HTMLButtonElement>(null);
   const nextRef = useRef<HTMLButtonElement>(null);
   const paginationRef = useRef<HTMLDivElement>(null);
@@ -59,7 +61,7 @@ const FeaturedBooksSection = () => {
     swiper.pagination.init();
     swiper.pagination.render();
     swiper.pagination.update();
-  }, [navReady, books.length]);
+  }, [navReady, books.length, locked]);
 
   useEffect(() => {
     let cancelled = false;
@@ -141,7 +143,10 @@ const FeaturedBooksSection = () => {
           onSwiper={(swiper) => {
             swiperRef.current = swiper;
             setNavReady(true);
+            setLocked(swiper.isLocked);
           }}
+          onLock={() => setLocked(true)}
+          onUnlock={() => setLocked(false)}
           pagination={{
             el: paginationRef.current,
             clickable: true,
@@ -253,15 +258,17 @@ const FeaturedBooksSection = () => {
             </SwiperSlide>
           ))}
         </Swiper>
-        <div className="book-slider-controls">
-          <button ref={prevRef} className="my-prev" aria-label="Previous">
-            <span className="sr-only">Prev</span>
-          </button>
-          <div ref={paginationRef} className="swiper-pagination" />
-          <button ref={nextRef} className="my-next" aria-label="Next">
-            <span className="sr-only">Next</span>
-          </button>
-        </div>
+        {!locked && (
+          <div className="book-slider-controls">
+            <button ref={prevRef} className="my-prev" aria-label="Previous">
+              <span className="sr-only">Prev</span>
+            </button>
+            <div ref={paginationRef} className="swiper-pagination" />
+            <button ref={nextRef} className="my-next" aria-label="Next">
+              <span className="sr-only">Next</span>
+            </button>
+          </div>
+        )}
       </div>
       <div className="text-left">
         <BookQuickViewModal

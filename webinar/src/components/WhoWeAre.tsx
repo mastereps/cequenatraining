@@ -76,8 +76,8 @@ const TimelineCard = ({
     <p
       className={
         item.highlight
-          ? "mt-1.5 font-text text-xs leading-snug text-black/80"
-          : "mt-1.5 font-text text-xs leading-snug text-slate-600 dark:text-white/70"
+          ? "mt-1.5 font-text text-base leading-snug text-black/80"
+          : "mt-1.5 font-text text-base leading-snug text-slate-600 dark:text-white/70"
       }
     >
       {item.detail}
@@ -96,12 +96,25 @@ const RailDot = () => (
   <span className="block h-3 w-3 -translate-y-1/2 rounded-full border-2 border-lantern bg-slate-50 dark:bg-black" />
 );
 
+// Grid tracks follow the row's length, so the timeline survives any milestone count.
+const columns = (count: number) => ({
+  gridTemplateColumns: `repeat(${Math.max(count, 1)}, minmax(0, 1fr))`,
+});
+
 const WhoWeAre = ({ content }: { content?: SectionContent }) => {
   const heading = pickString(content, "heading", "Who We Are");
   const subheading = pickString(content, "subheading", "A Brief Story About Maria Cequeña");
   const milestones = pickList<Milestone>(content, "milestones", MILESTONES);
-  const topRow = milestones.slice(0, 4); // 01 → 04
-  const bottomRow = milestones.slice(4).reverse(); // visual L→R: 08, 07, 06, 05
+  // Position supplies the number when a milestone leaves it blank, so adding or
+  // removing one in the admin doesn't leave a gap in the sequence.
+  const numbered = milestones.map((item, index) => ({
+    ...item,
+    key: index,
+    no: item.no || String(index + 1).padStart(2, "0"),
+  }));
+  const splitAt = Math.ceil(numbered.length / 2);
+  const topRow = numbered.slice(0, splitAt);
+  const bottomRow = numbered.slice(splitAt).reverse(); // read right-to-left
 
   return (
     <section className="bg-slate-50 py-16 text-slate-900 dark:bg-black dark:text-white sm:py-20">
@@ -116,11 +129,12 @@ const WhoWeAre = ({ content }: { content?: SectionContent }) => {
         </div>
 
         {/* ---------- Desktop: snaking timeline (lg and up) ---------- */}
+        {/* Both rows read number → rail → card, top to bottom. */}
         <div className="mt-12 hidden px-8 lg:block">
-          {/* Numbers 01 → 04 */}
-          <div className="grid grid-cols-4 gap-6">
+          {/* First-half numbers */}
+          <div className="grid gap-6" style={columns(topRow.length)}>
             {topRow.map((item) => (
-              <div key={item.no} className="flex justify-center">
+              <div key={item.key} className="flex justify-center">
                 <NumberBadge value={item.no} />
               </div>
             ))}
@@ -128,8 +142,11 @@ const WhoWeAre = ({ content }: { content?: SectionContent }) => {
 
           {/* The rail runs along this box: top edge, right elbow, bottom edge. */}
           <div className="relative mt-3">
-            {/* top rail — starts under the 01 dot */}
-            <div className="pointer-events-none absolute left-[calc(12.5%-6px)] right-0 top-0 border-t-2 border-lantern/60" />
+            {/* top rail — starts under the first dot */}
+            <div
+              className="pointer-events-none absolute right-0 top-0 border-t-2 border-lantern/60"
+              style={{ left: `calc(50% / ${Math.max(topRow.length, 1)} - 6px)` }}
+            />
             {/* right elbow, wrapping top rail down to bottom rail */}
             <div className="pointer-events-none absolute inset-y-0 -right-8 w-8 rounded-r-2xl border-y-2 border-r-2 border-lantern/60" />
             {/* bottom rail + arrowhead pointing back to the start */}
@@ -137,47 +154,53 @@ const WhoWeAre = ({ content }: { content?: SectionContent }) => {
             <span className="pointer-events-none absolute -left-2 bottom-0 h-2.5 w-2.5 translate-y-1/2 rotate-45 border-b-2 border-l-2 border-lantern/60" />
 
             {/* dots on the top rail */}
-            <div className="grid h-0 grid-cols-4 gap-6">
+            <div className="grid h-0 gap-6" style={columns(topRow.length)}>
               {topRow.map((item) => (
-                <div key={item.no} className="flex justify-center">
+                <div key={item.key} className="flex justify-center">
                   <RailDot />
                 </div>
               ))}
             </div>
 
-            {/* Cards 01 → 04 */}
-            <div className="grid grid-cols-4 items-stretch gap-6 pt-8">
+            {/* first-half cards */}
+            <div
+              className="grid items-stretch gap-6 pt-8"
+              style={columns(topRow.length)}
+            >
               {topRow.map((item) => (
-                <div key={item.no} className="mx-auto w-full max-w-[250px]">
+                <div key={item.key} className="mx-auto w-full max-w-[250px]">
                   <TimelineCard item={item} centered />
                 </div>
               ))}
             </div>
 
-            {/* Cards 08 → 05 */}
-            <div className="grid grid-cols-4 items-stretch gap-6 pt-14">
+            {/* second-half numbers */}
+            <div className="mt-14 grid gap-6" style={columns(bottomRow.length)}>
               {bottomRow.map((item) => (
-                <div key={item.no} className="mx-auto w-full max-w-[250px]">
-                  <TimelineCard item={item} centered />
+                <div key={item.key} className="flex justify-center">
+                  <NumberBadge value={item.no} />
                 </div>
               ))}
             </div>
 
             {/* dots on the bottom rail */}
-            <div className="mt-8 grid h-0 grid-cols-4 gap-6">
+            <div className="mt-3 grid h-0 gap-6" style={columns(bottomRow.length)}>
               {bottomRow.map((item) => (
-                <div key={item.no} className="flex justify-center">
+                <div key={item.key} className="flex justify-center">
                   <RailDot />
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Numbers 08 → 05 */}
-          <div className="mt-12 grid grid-cols-4 gap-6">
+          {/* second-half cards */}
+          <div
+            className="mt-8 grid items-stretch gap-6"
+            style={columns(bottomRow.length)}
+          >
             {bottomRow.map((item) => (
-              <div key={item.no} className="flex justify-center">
-                <NumberBadge value={item.no} />
+              <div key={item.key} className="mx-auto w-full max-w-[250px]">
+                <TimelineCard item={item} centered />
               </div>
             ))}
           </div>
@@ -185,8 +208,8 @@ const WhoWeAre = ({ content }: { content?: SectionContent }) => {
 
         {/* ---------- Mobile / tablet: vertical timeline ---------- */}
         <ol className="mt-10 space-y-5 lg:hidden">
-          {milestones.map((item) => (
-            <li key={item.no} className="flex gap-4">
+          {numbered.map((item) => (
+            <li key={item.key} className="flex gap-4">
               <div className="flex flex-col items-center pt-1">
                 <NumberBadge value={item.no} />
                 <span className="mt-2 h-full w-px flex-1 bg-lantern/50" />
