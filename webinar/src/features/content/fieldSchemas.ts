@@ -49,6 +49,35 @@ export const SECTION_FIELD_SCHEMAS: Record<string, ContentField[]> = {
       ],
     },
   ],
+  why_choose_us: [
+    { key: "eyebrow", label: "Eyebrow", type: "text" },
+    { key: "heading", label: "Heading", type: "text" },
+    { key: "subheading", label: "Subheading", type: "textarea" },
+    { key: "cta_label", label: "Button label", type: "text" },
+    {
+      key: "reasons",
+      label: "Reasons",
+      type: "objectList",
+      itemLabel: "Reason",
+      fields: [
+        { key: "title", label: "Title", type: "text" },
+        { key: "text", label: "Text", type: "textarea" },
+      ],
+    },
+  ],
+  testimonials: [
+    { key: "heading", label: "Heading", type: "text" },
+    {
+      key: "testimonials",
+      label: "Testimonials",
+      type: "objectList",
+      itemLabel: "Testimonial",
+      fields: [
+        { key: "quote", label: "Quote", type: "textarea" },
+        { key: "name", label: "Name", type: "text" },
+      ],
+    },
+  ],
   about_hero: [
     { key: "breadcrumb_label", label: "Breadcrumb label", type: "text" },
     { key: "title", label: "Title", type: "text" },

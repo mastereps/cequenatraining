@@ -2,8 +2,10 @@ import { useEffect, useState, type ComponentType } from "react";
 import Hero from "../../landing-page/components/Hero";
 import About from "../../landing-page/components/About";
 import WhatWeDo from "../../landing-page/components/WhatWeDo";
+import WhyChooseUs from "../../landing-page/components/WhyChooseUs";
 import FeaturedBooksSection from "../../landing-page/components/FeaturedBooksSection";
 import LatestEvents from "../../landing-page/components/LatestEvents";
+import Testimonials from "../../landing-page/components/Testimonials";
 import Credibility from "../../landing-page/components/Credibility";
 import WhoWeAre from "../../components/WhoWeAre";
 import Reveal from "../../components/Reveal";
@@ -29,8 +31,10 @@ const REGISTRY: Record<ContentPage, Record<string, RegistryEntry>> = {
     hero: { Component: Hero },
     about_intro: { Component: About },
     what_we_do: { Component: WhatWeDo },
+    why_choose_us: { Component: WhyChooseUs },
     featured_books: { Component: FeaturedBooksSection },
     latest_events: { Component: LatestEvents },
+    testimonials: { Component: Testimonials },
     credibility: { Component: Credibility },
   },
   about: {
@@ -46,7 +50,16 @@ const REGISTRY: Record<ContentPage, Record<string, RegistryEntry>> = {
 // Default order used before the API responds or if it fails, so the page
 // always renders (each component falls back to its hardcoded content).
 const DEFAULT_ORDER: Record<ContentPage, string[]> = {
-  home: ["hero", "about_intro", "what_we_do", "featured_books", "latest_events", "credibility"],
+  home: [
+    "hero",
+    "about_intro",
+    "what_we_do",
+    "why_choose_us",
+    "featured_books",
+    "latest_events",
+    "testimonials",
+    "credibility",
+  ],
   about: ["about_hero", "who_we_are", "about_body", "about_stats", "about_gallery", "about_approach"],
 };
 
