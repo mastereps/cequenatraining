@@ -3,7 +3,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import crypto from "crypto";
 import multer from "multer";
-import { AppError } from "./errors.js";
+import { AppError, isAppError } from "./errors.js";
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url));
 
@@ -46,7 +46,7 @@ const storage = multer.diskStorage({
   },
 });
 
-export const imageUpload = multer({
+const imageUpload = multer({
   storage,
   limits: { fileSize: MAX_FILE_SIZE_BYTES },
   fileFilter: (_req, file, cb) => {
@@ -63,3 +63,25 @@ export const imageUpload = multer({
     cb(null, true);
   },
 });
+
+/**
+ * Accepts one image on the `image` field. The app has no global error
+ * middleware, so multer's errors are translated to JSON right here.
+ */
+export const singleImageUpload = (req, res, next) => {
+  imageUpload.single("image")(req, res, (error) => {
+    if (!error) {
+      next();
+      return;
+    }
+    if (error instanceof multer.MulterError) {
+      const message =
+        error.code === "LIMIT_FILE_SIZE" ? "Image is too large (max 5 MB)." : error.message;
+      return res.status(400).json({ error: message });
+    }
+    if (isAppError(error)) {
+      return res.status(error.status).json({ error: error.message });
+    }
+    return res.status(500).json({ error: "Upload failed." });
+  });
+};

@@ -11,6 +11,8 @@ import webinarsRouter from "./routes/webinars.js";
 import authRouter from "./routes/auth.js";
 import contentRouter from "./routes/content.js";
 import adminRouter from "./routes/admin.js";
+import booksRouter from "./routes/books.js";
+import { listExternalLinksByBookIds } from "./services/bookService.js";
 import { logger } from "./utils/logger.js";
 import { startEmailOutboxWorker } from "./workers/emailOutboxWorker.js";
 import { attachAuthUser } from "./middleware/auth.js";
@@ -127,6 +129,7 @@ app.use("/api/auth", authRouter);
 app.use("/api/uploads", express.static(UPLOADS_DIR));
 app.use("/api", contentRouter);
 app.use("/api", adminRouter);
+app.use("/api", booksRouter);
 
 app.post("/api/contact", contactLimiter, async (req, res) => {
   const email = String(req.body?.email || "").trim();
@@ -222,7 +225,8 @@ app.get("/api/books", async (req, res) => {
         cover_image_url,
         short_description,
         details,
-        in_stock
+        in_stock,
+        internal_purchase_enabled
       FROM books
       WHERE is_active = true
       ORDER BY id ASC
@@ -231,7 +235,16 @@ app.get("/api/books", async (req, res) => {
       [limit, offset],
     );
 
-    res.json(result.rows);
+    const linksByBookId = await listExternalLinksByBookIds(
+      result.rows.map((row) => row.id),
+    );
+
+    res.json(
+      result.rows.map((row) => ({
+        ...row,
+        external_links: linksByBookId.get(row.id) || [],
+      })),
+    );
   } catch (err) {
     console.error("Error fetching books:", err);
     res.status(500).json({ error: "Database error" });
@@ -254,7 +267,8 @@ app.get("/api/books/:slug", async (req, res) => {
         cover_image_url,
         short_description,
         details,
-        in_stock
+        in_stock,
+        internal_purchase_enabled
       FROM books
       WHERE slug = $1
         AND is_active = true
@@ -278,9 +292,12 @@ app.get("/api/books/:slug", async (req, res) => {
       [book.id],
     );
 
+    const linksByBookId = await listExternalLinksByBookIds([book.id]);
+
     res.json({
       ...book,
       images: imagesResult.rows.map((row) => row.image_url),
+      external_links: linksByBookId.get(book.id) || [],
     });
   } catch (err) {
     console.error("Error fetching book:", err);

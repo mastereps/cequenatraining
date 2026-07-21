@@ -84,7 +84,7 @@ const BookDetails = () => {
     book.images?.[0] || book.cover_image_url,
   );
   const description = book.details || book.short_description;
-  const purchaseOptions = getPurchaseOptions(book.slug);
+  const purchaseOptions = getPurchaseOptions(book);
   const isInStock = book.in_stock !== false;
 
   return (

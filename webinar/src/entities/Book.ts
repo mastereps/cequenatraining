@@ -1,3 +1,5 @@
+import type { ExternalLink } from "../utils/bookAvailability";
+
 export default interface Book {
   id: number;
   slug: string;
@@ -9,4 +11,7 @@ export default interface Book {
   details?: string | null;
   images?: string[];
   in_stock?: boolean;
+  is_active?: boolean;
+  internal_purchase_enabled?: boolean;
+  external_links?: ExternalLink[];
 }

@@ -84,7 +84,7 @@ const BookQuickViewModal = ({ open, book, loading, error, onClose }: Props) => {
   const hasMultipleImages = images.length > 1;
   const activeImageUrl = images[activeImageIndex];
   const description = book?.short_description || book?.details;
-  const purchaseOptions = getPurchaseOptions(book?.slug);
+  const purchaseOptions = getPurchaseOptions(book);
   const isInStock = book?.in_stock !== false;
   const slideOffsetClass = !hasInteracted
     ? ""

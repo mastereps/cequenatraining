@@ -43,10 +43,10 @@ const ProductsCollectionPage = () => {
   const stats = useMemo(() => {
     const inStock = books.filter((book) => book.in_stock !== false).length;
     const externalOnly = books.filter(
-      (book) => !getPurchaseOptions(book.slug).internalAvailable,
+      (book) => !getPurchaseOptions(book).internalAvailable,
     ).length;
     const internationalOnly = books.filter(
-      (book) => getPurchaseOptions(book.slug).isInternationalOnly,
+      (book) => getPurchaseOptions(book).isInternationalOnly,
     ).length;
 
     return {
@@ -61,9 +61,9 @@ const ProductsCollectionPage = () => {
     const next = books.filter((book) => {
       if (filter === "in-stock") return book.in_stock !== false;
       if (filter === "external-only")
-        return !getPurchaseOptions(book.slug).internalAvailable;
+        return !getPurchaseOptions(book).internalAvailable;
       if (filter === "international-only")
-        return getPurchaseOptions(book.slug).isInternationalOnly;
+        return getPurchaseOptions(book).isInternationalOnly;
       return true;
     });
 
@@ -182,7 +182,7 @@ const ProductsCollectionPage = () => {
           {!error && filteredBooks.length > 0 && (
             <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
               {filteredBooks.map((book) => {
-                const purchaseOptions = getPurchaseOptions(book.slug);
+                const purchaseOptions = getPurchaseOptions(book);
                 return (
                   <Link
                     key={book.slug || book.id}

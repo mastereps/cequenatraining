@@ -172,7 +172,7 @@ const FeaturedBooksSection = () => {
               className="flex flex-col items-center"
             >
               {(() => {
-                const purchaseOptions = getPurchaseOptions(book.slug);
+                const purchaseOptions = getPurchaseOptions(book);
                 const isInStock = book.in_stock !== false;
                 const primaryExternalUrl = purchaseOptions.externalLinks[0]?.url;
                 return (

@@ -34,7 +34,13 @@ export const bookGalleryBySlug: Record<string, string[]> = {
   "tome-of-wisdom": [bookRed],
 };
 
-export const resolveBookImage = (slug?: string, fallback?: string) => {
+/**
+ * The stored cover url wins so admin edits under /admin/books actually show up.
+ * The bundled map is the fallback that keeps the legacy titles rendering when a
+ * book has no cover set or the API is unreachable.
+ */
+export const resolveBookImage = (slug?: string, coverImageUrl?: string) => {
+  if (coverImageUrl) return coverImageUrl;
   if (slug && bookCoverBySlug[slug]) return bookCoverBySlug[slug];
-  return fallback || "";
+  return "";
 };
