@@ -1,6 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
+  AiOutlineCalendar,
+  AiOutlineCreditCard,
+  AiOutlineDelete,
+  AiOutlineEdit,
+  AiOutlineFolderOpen,
+  AiOutlineHistory,
+  AiOutlinePlus,
+  AiOutlineUndo,
+  AiOutlineVideoCamera,
+} from "react-icons/ai";
+import {
   archiveWebinar,
   createWebinar,
   fetchAdminWebinars,
@@ -128,6 +139,27 @@ const inputClass =
   "w-full rounded border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-lantern dark:border-white/10 dark:bg-white/5";
 const labelClass = "mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-slate-500";
 const pillClass = "rounded-full px-2 py-0.5 text-[11px] font-semibold";
+const actionBtnClass =
+  "inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-semibold transition hover:bg-slate-100 dark:border-white/10 dark:hover:bg-white/5";
+
+const EMPTY_STATES: Record<Tab, { title: string; body: string }> = {
+  upcoming: {
+    title: "No upcoming webinars",
+    body: "Scheduled webinars with a future start time will appear here.",
+  },
+  past: {
+    title: "No past webinars",
+    body: "Webinars that have already taken place will appear here.",
+  },
+  drafts: {
+    title: "No draft webinars found",
+    body: "You don't have any draft webinars yet.",
+  },
+  archived: {
+    title: "No archived webinars",
+    body: "Webinars you archive will appear here and can be restored.",
+  },
+};
 
 const AdminWebinarsPage = () => {
   const [webinars, setWebinars] = useState<AdminWebinar[]>([]);
@@ -332,8 +364,9 @@ const AdminWebinarsPage = () => {
         <button
           type="button"
           onClick={openAdd}
-          className="cursor-pointer rounded bg-emerald-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-800"
+          className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-800"
         >
+          <AiOutlinePlus aria-hidden="true" className="text-base" />
           New webinar
         </button>
       </header>
@@ -632,9 +665,21 @@ const AdminWebinarsPage = () => {
       {loading ? (
         <p>Loading webinars…</p>
       ) : visible.length === 0 ? (
-        <p className="rounded-lg border border-slate-200 bg-white p-8 text-center text-sm text-slate-500 dark:border-white/10 dark:bg-[#0b1220]">
-          Nothing here yet.
-        </p>
+        <div className="flex flex-col items-center gap-3 rounded-lg border border-slate-200 bg-white px-6 py-14 text-center dark:border-white/10 dark:bg-[#0b1220]">
+          <span className="flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 text-2xl text-slate-400 dark:bg-white/5">
+            <AiOutlineFolderOpen aria-hidden="true" />
+          </span>
+          <p className="text-base font-semibold">{EMPTY_STATES[tab].title}</p>
+          <p className="text-sm text-slate-500">{EMPTY_STATES[tab].body}</p>
+          <button
+            type="button"
+            onClick={openAdd}
+            className="mt-1 inline-flex cursor-pointer items-center gap-2 rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-800"
+          >
+            <AiOutlinePlus aria-hidden="true" className="text-base" />
+            New webinar
+          </button>
+        </div>
       ) : (
         <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white dark:border-white/10 dark:bg-[#0b1220]">
           <table className="w-full text-left text-sm">
@@ -659,14 +704,24 @@ const AdminWebinarsPage = () => {
                     }`}
                   >
                     <td className="px-4 py-3">
-                      <p className="font-semibold">{webinar.title}</p>
+                      <div className="flex items-center gap-3">
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500 dark:bg-white/5 dark:text-slate-300">
+                          <AiOutlineVideoCamera aria-hidden="true" />
+                        </span>
+                        <p className="font-semibold">{webinar.title}</p>
+                      </div>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
-                      {formatManilaDateTime(webinar.start_at)}
-                      <span className="block text-xs text-slate-400">{webinar.timezone}</span>
+                      <span className="flex items-center gap-2">
+                        <AiOutlineCalendar aria-hidden="true" className="text-slate-400" />
+                        {formatManilaDateTime(webinar.start_at)}
+                      </span>
+                      <span className="mt-0.5 block pl-6 text-xs text-slate-400">
+                        {webinar.timezone}
+                      </span>
                     </td>
                     <td className="px-4 py-3">
-                      <div className="flex flex-wrap gap-1">
+                      <div className="flex flex-col items-start gap-1">
                         <span
                           className={`${pillClass} ${
                             webinar.is_published
@@ -705,21 +760,24 @@ const AdminWebinarsPage = () => {
                         <button
                           type="button"
                           onClick={() => openEdit(webinar)}
-                          className="cursor-pointer rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold transition hover:bg-slate-100 dark:border-white/10 dark:hover:bg-white/5"
+                          className={actionBtnClass}
                         >
+                          <AiOutlineEdit aria-hidden="true" className="text-sm" />
                           Edit
                         </button>
                         <button
                           type="button"
                           onClick={() => openReschedule(webinar)}
-                          className="cursor-pointer rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold transition hover:bg-slate-100 dark:border-white/10 dark:hover:bg-white/5"
+                          className={actionBtnClass}
                         >
+                          <AiOutlineHistory aria-hidden="true" className="text-sm" />
                           Reschedule
                         </button>
                         <Link
                           to={`/admin/webinars/${webinar.slug}/payments`}
-                          className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold transition hover:bg-slate-100 dark:border-white/10 dark:hover:bg-white/5"
+                          className={actionBtnClass}
                         >
+                          <AiOutlineCreditCard aria-hidden="true" className="text-sm" />
                           Payments
                         </Link>
                         <button
@@ -728,12 +786,17 @@ const AdminWebinarsPage = () => {
                             archived ? void handleArchiveToggle(webinar) : setConfirming(webinar)
                           }
                           disabled={busyId === webinar.id}
-                          className={`cursor-pointer rounded-lg border px-3 py-1.5 text-xs font-semibold transition disabled:opacity-50 ${
+                          className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition disabled:opacity-50 ${
                             archived
                               ? "border-slate-300 hover:bg-slate-100 dark:border-white/10 dark:hover:bg-white/5"
                               : "border-red-500/30 text-red-600 hover:bg-red-500/10 dark:text-red-400"
                           }`}
                         >
+                          {archived ? (
+                            <AiOutlineUndo aria-hidden="true" className="text-sm" />
+                          ) : (
+                            <AiOutlineDelete aria-hidden="true" className="text-sm" />
+                          )}
                           {archived ? "Restore" : "Archive"}
                         </button>
                       </div>
