@@ -11,7 +11,9 @@ const installObserver = () => {
     "IntersectionObserver",
     class {
       disconnect = vi.fn();
-      constructor(public callback: Callback) {
+      callback: Callback;
+      constructor(callback: Callback) {
+        this.callback = callback;
         observers.push(this);
       }
       observe() {}
