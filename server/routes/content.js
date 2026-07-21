@@ -7,7 +7,7 @@ import {
   updatePageSectionController,
   uploadContentImageController,
 } from "../controllers/contentController.js";
-import { requireRole } from "../middleware/auth.js";
+import { requireSuperAdmin } from "../middleware/auth.js";
 import { imageUpload } from "../utils/uploads.js";
 import { isAppError } from "../utils/errors.js";
 
@@ -17,15 +17,15 @@ const router = express.Router();
 router.get("/content/:page", getPublicPageContentController);
 
 // Admin content management.
-router.get("/admin/content/:page", requireRole("admin"), getAdminPageContentController);
-router.put("/admin/content/:page/order", requireRole("admin"), updatePageOrderController);
-router.patch("/admin/content/:page/:sectionKey", requireRole("admin"), updatePageSectionController);
+router.get("/admin/content/:page", requireSuperAdmin, getAdminPageContentController);
+router.put("/admin/content/:page/order", requireSuperAdmin, updatePageOrderController);
+router.patch("/admin/content/:page/:sectionKey", requireSuperAdmin, updatePageSectionController);
 
 // Image upload for content fields. Multer errors are translated to JSON here
 // since the app has no global error middleware.
 router.post(
   "/admin/uploads",
-  requireRole("admin"),
+  requireSuperAdmin,
   (req, res, next) => {
     imageUpload.single("image")(req, res, (error) => {
       if (!error) {

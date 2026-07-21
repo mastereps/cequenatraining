@@ -33,6 +33,10 @@ export const requireAuth = (req, res, next) => {
   return next();
 };
 
+// Role ladder: customer < admin < super_admin. Every admin surface accepts both
+// elevated roles; content management is the one thing reserved for super admins.
+export const ADMIN_ROLES = ["admin", "super_admin"];
+
 export const requireRole = (...allowedRoles) => (req, res, next) => {
   if (!req.authUser) {
     return res.status(401).json({ error: "Authentication required." });
@@ -46,3 +50,7 @@ export const requireRole = (...allowedRoles) => (req, res, next) => {
 
   return next();
 };
+
+export const requireAdmin = requireRole(...ADMIN_ROLES);
+
+export const requireSuperAdmin = requireRole("super_admin");

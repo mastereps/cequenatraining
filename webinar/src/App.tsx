@@ -24,6 +24,11 @@ import WebinarConfirmedPage from "./pages/webinars/WebinarConfirmedPage";
 import WebinarPaymentAdminIndexPage from "./pages/webinars/WebinarPaymentAdminIndexPage";
 import WebinarPaymentAdminPage from "./pages/webinars/WebinarPaymentAdminPage";
 import AdminContentPage from "./pages/admin/AdminContentPage";
+import AdminLayout from "./pages/admin/AdminLayout";
+import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
+import AdminPlaceholderPage from "./pages/admin/AdminPlaceholderPage";
+import RequireRole from "./components/RequireRole";
+import { isAdminUser, isSuperAdmin } from "./features/auth/roles";
 import { CART_CHECKOUT_ENABLED } from "./config/commerce";
 // import EventsList from "./components/EventList";
 // import SearchInput from "./components/SearchInput";
@@ -44,9 +49,12 @@ function App() {
   // const [topic, setTopic] = useState("All");
   // const [order, setOrder] = useState("dateAsc");
 
+  // The admin area brings its own shell, so the marketing chrome is skipped there.
+  const isAdminArea = useLocation().pathname.startsWith("/admin");
+
   return (
     <>
-      <NavBar />
+      {!isAdminArea && <NavBar />}
       <ScrollToTop />
       <Routes>
         <Route path="/" element={<LandingPage />} />
@@ -59,9 +67,33 @@ function App() {
         <Route path="/webinars/:slug/submitted" element={<WebinarSubmittedPage />} />
         <Route path="/verify" element={<VerifyPage />} />
         <Route path="/webinars/:slug/confirmed" element={<WebinarConfirmedPage />} />
-        <Route path="/admin/content" element={<AdminContentPage />} />
-        <Route path="/admin/webinars/payments" element={<WebinarPaymentAdminIndexPage />} />
-        <Route path="/admin/webinars/:slug/payments" element={<WebinarPaymentAdminPage />} />
+        <Route
+          path="/admin"
+          element={
+            <RequireRole allow={isAdminUser}>
+              <AdminLayout />
+            </RequireRole>
+          }
+        >
+          <Route index element={<AdminDashboardPage />} />
+          <Route
+            path="content"
+            element={
+              <RequireRole allow={isSuperAdmin}>
+                <AdminContentPage />
+              </RequireRole>
+            }
+          />
+          <Route path="webinars/payments" element={<WebinarPaymentAdminIndexPage />} />
+          <Route path="webinars/:slug/payments" element={<WebinarPaymentAdminPage />} />
+          <Route path="webinars" element={<AdminPlaceholderPage title="Webinars" />} />
+          <Route path="events" element={<AdminPlaceholderPage title="Events" />} />
+          <Route path="registrations" element={<AdminPlaceholderPage title="Registrations" />} />
+          <Route path="orders" element={<AdminPlaceholderPage title="Orders" />} />
+          <Route path="books" element={<AdminPlaceholderPage title="Books" />} />
+          <Route path="users" element={<AdminPlaceholderPage title="Users" />} />
+          <Route path="settings" element={<AdminPlaceholderPage title="Settings" />} />
+        </Route>
         <Route
           path="/cart"
           element={
@@ -96,7 +128,7 @@ function App() {
         <Route path="*" element={<LandingPage />} />
       </Routes>
       {CART_CHECKOUT_ENABLED && <CartDrawer />}
-      <Footer />
+      {!isAdminArea && <Footer />}
     </>
   );
 }

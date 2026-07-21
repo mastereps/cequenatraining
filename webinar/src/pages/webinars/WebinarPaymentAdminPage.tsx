@@ -9,6 +9,7 @@ import {
 } from "../../features/webinars/api";
 import type { Webinar, WebinarAdminPaymentProof } from "../../features/webinars/types";
 import { useAuth } from "../../store/AuthContext";
+import { isAdminUser } from "../../features/auth/roles";
 import { formatManilaDateTime } from "../../features/webinars/format";
 import { formatPrice } from "../../utils/formatPrice";
 
@@ -32,7 +33,7 @@ const WebinarPaymentAdminPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
-  const isAdmin = String(user?.role || "").trim().toLowerCase() === "admin";
+  const isAdmin = isAdminUser(user);
 
   const load = async () => {
     setLoading(true);
@@ -104,7 +105,7 @@ const WebinarPaymentAdminPage = () => {
 
   if (!isAdmin) {
     return (
-      <main className="mx-auto mt-28 max-w-[900px] px-4 pb-20">
+      <main className="mx-auto max-w-[900px] px-4 pb-20">
         <div className="rounded border border-red-200 bg-red-50 p-4 text-red-700">
           Admin access is required.
         </div>
@@ -113,11 +114,11 @@ const WebinarPaymentAdminPage = () => {
   }
 
   if (loading) {
-    return <main className="mx-auto mt-28 max-w-[1100px] px-4">Loading payment review...</main>;
+    return <main className="mx-auto max-w-[1100px] px-4">Loading payment review...</main>;
   }
 
   return (
-    <main className="mx-auto mt-28 max-w-[1100px] px-4 pb-20">
+    <main className="mx-auto max-w-[1100px] px-4 pb-20">
       <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="headline-gradient mb-2 font-text text-lg font-bold uppercase tracking-[0.08em]">

@@ -8,23 +8,18 @@ import {
 import CompanyLogo from "../assets/images/cequena_training.png";
 import { useCart } from "../store/CartContext";
 import { useAuth } from "../store/AuthContext";
+import { isAdminUser } from "../features/auth/roles";
 import { CART_CHECKOUT_ENABLED } from "../config/commerce";
 const NavBar = () => {
   const { items, openCart } = useCart();
   const { user, logout } = useAuth();
-  const isAdmin = String(user?.role || "").trim().toLowerCase() === "admin";
   const links = [
     { label: "Home", href: "/" },
     { label: "Webinars", href: "/webinars" },
     { label: "Products", href: "/products" },
     { label: "About", href: "/about" },
     { label: "Contact", href: "/contact" },
-    ...(isAdmin
-      ? [
-          { label: "Content", href: "/admin/content" },
-          { label: "Payment Review", href: "/admin/webinars/payments" },
-        ]
-      : []),
+    ...(isAdminUser(user) ? [{ label: "Admin", href: "/admin" }] : []),
   ];
   const [nav, setNav] = useState(true);
   const [isDark, setDark] = useState(() => {

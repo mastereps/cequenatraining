@@ -13,7 +13,7 @@ import {
   submitPaymentProofController,
   verifyRegistrationController,
 } from "../controllers/webinarController.js";
-import { requireRole } from "../middleware/auth.js";
+import { requireAdmin } from "../middleware/auth.js";
 
 const router = express.Router();
 
@@ -23,10 +23,10 @@ router.get("/webinars/:slug/registration-status", getRegistrationStatusControlle
 router.post("/webinars/:slug/register", registerForWebinarController);
 router.post("/webinars/:slug/payment-session", createWebinarPaymentSessionController);
 router.post("/webinars/:slug/payment-proof", submitPaymentProofController);
-router.get("/webinars/:slug/payment-proofs", requireRole("admin"), listPaymentProofsController);
-router.post("/webinars/:slug/payment-approve", requireRole("admin"), approvePaymentProofController);
-router.post("/webinars/:slug/payment-reject", requireRole("admin"), rejectPaymentProofController);
-router.post("/webinars/:slug/send-zoom-links", requireRole("admin"), sendZoomLinksController);
+router.get("/webinars/:slug/payment-proofs", requireAdmin, listPaymentProofsController);
+router.post("/webinars/:slug/payment-approve", requireAdmin, approvePaymentProofController);
+router.post("/webinars/:slug/payment-reject", requireAdmin, rejectPaymentProofController);
+router.post("/webinars/:slug/send-zoom-links", requireAdmin, sendZoomLinksController);
 router.get("/verify", verifyRegistrationController);
 router.post("/webinars/:slug/resend-confirmation", resendConfirmationController);
 

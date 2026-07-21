@@ -1,6 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { attachAuthUser, requireAuth, requireRole } from "../middleware/auth.js";
+import {
+  attachAuthUser,
+  requireAdmin,
+  requireAuth,
+  requireRole,
+  requireSuperAdmin,
+} from "../middleware/auth.js";
 import {
   createAuthSessionToken,
   getAuthSessionCookieName,
@@ -69,4 +75,36 @@ test("requireRole allows matching roles and rejects other roles", () => {
     () => assert.fail("next should not run"),
   );
   assert.equal(res.statusCode, 403);
+});
+
+test("requireAdmin allows admin and super_admin", () => {
+  for (const role of ["admin", "super_admin"]) {
+    let nextCalled = false;
+    requireAdmin({ authUser: { role } }, makeResponse(), () => {
+      nextCalled = true;
+    });
+    assert.equal(nextCalled, true, `${role} should pass requireAdmin`);
+  }
+
+  const res = makeResponse();
+  requireAdmin({ authUser: { role: "customer" } }, res, () =>
+    assert.fail("next should not run"),
+  );
+  assert.equal(res.statusCode, 403);
+});
+
+test("requireSuperAdmin rejects plain admins", () => {
+  let nextCalled = false;
+  requireSuperAdmin({ authUser: { role: "super_admin" } }, makeResponse(), () => {
+    nextCalled = true;
+  });
+  assert.equal(nextCalled, true);
+
+  for (const role of ["admin", "customer"]) {
+    const res = makeResponse();
+    requireSuperAdmin({ authUser: { role } }, res, () =>
+      assert.fail("next should not run"),
+    );
+    assert.equal(res.statusCode, 403, `${role} should be rejected`);
+  }
 });

@@ -9,6 +9,7 @@ import webhooksRouter from "./routes/webhooks.js";
 import webinarsRouter from "./routes/webinars.js";
 import authRouter from "./routes/auth.js";
 import contentRouter from "./routes/content.js";
+import adminRouter from "./routes/admin.js";
 import { logger } from "./utils/logger.js";
 import { startEmailOutboxWorker } from "./workers/emailOutboxWorker.js";
 import { attachAuthUser } from "./middleware/auth.js";
@@ -110,6 +111,7 @@ app.use("/api", webinarsRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/uploads", express.static(UPLOADS_DIR));
 app.use("/api", contentRouter);
+app.use("/api", adminRouter);
 
 app.post("/api/contact", async (req, res) => {
   const email = String(req.body?.email || "").trim();

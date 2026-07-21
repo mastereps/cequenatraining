@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../store/AuthContext";
+import { isSuperAdmin } from "../../features/auth/roles";
 import {
   fetchAdminPageContent,
   updateSection,
@@ -17,7 +18,7 @@ const PAGES: { value: ContentPage; label: string }[] = [
 
 const AdminContentPage = () => {
   const { user } = useAuth();
-  const isAdmin = String(user?.role || "").trim().toLowerCase() === "admin";
+  const isAdmin = isSuperAdmin(user);
 
   const [page, setPage] = useState<ContentPage>("home");
   const [sections, setSections] = useState<PageSection[]>([]);
@@ -139,7 +140,7 @@ const AdminContentPage = () => {
 
   if (!isAdmin) {
     return (
-      <main className="mx-auto mt-28 max-w-[900px] px-4 pb-20">
+      <main className="mx-auto max-w-[900px] px-4 pb-20">
         <div className="rounded border border-red-200 bg-red-50 p-4 text-red-700">
           Admin access is required.
         </div>
@@ -148,7 +149,7 @@ const AdminContentPage = () => {
   }
 
   return (
-    <main className="mx-auto mt-28 max-w-[1000px] px-4 pb-20">
+    <main className="mx-auto max-w-[1000px] px-4 pb-20">
       <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="headline-gradient mb-2 font-text text-lg font-bold uppercase tracking-[0.08em]">
