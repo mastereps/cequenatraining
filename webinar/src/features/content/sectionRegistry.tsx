@@ -50,6 +50,10 @@ const DEFAULT_ORDER: Record<ContentPage, string[]> = {
   about: ["about_hero", "who_we_are", "about_body", "about_stats", "about_gallery", "about_approach"],
 };
 
+// Heroes render above the fold, so a scroll reveal there just fires on load
+// and reads as the page jumping. They stay static.
+const NO_REVEAL = new Set(["hero", "about_hero"]);
+
 const buildDefaultSections = (page: ContentPage): PageSection[] =>
   DEFAULT_ORDER[page].map((section_key, index) => ({
     id: `default-${section_key}`,
@@ -93,6 +97,9 @@ export const PageSections = ({ page }: { page: ContentPage }) => {
         if (!entry) return null;
         const { Component, contained } = entry;
         const rendered = <Component content={section.content} />;
+        if (NO_REVEAL.has(section.section_key)) {
+          return <div key={section.id}>{rendered}</div>;
+        }
         if (contained) {
           return (
             <Reveal

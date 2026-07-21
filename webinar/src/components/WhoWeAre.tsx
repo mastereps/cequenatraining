@@ -174,7 +174,7 @@ const WhoWeAre = ({ content }: { content?: SectionContent }) => {
           </div>
 
           {/* Numbers 08 → 05 */}
-          <div className="mt-3 grid grid-cols-4 gap-6">
+          <div className="mt-12 grid grid-cols-4 gap-6">
             {bottomRow.map((item) => (
               <div key={item.no} className="flex justify-center">
                 <NumberBadge value={item.no} />
