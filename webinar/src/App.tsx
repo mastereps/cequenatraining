@@ -80,7 +80,7 @@ function App() {
           <Route path="webinars/payments" element={<WebinarPaymentAdminIndexPage />} />
           <Route path="webinars/:slug/payments" element={<WebinarPaymentAdminPage />} />
           <Route path="webinars" element={<AdminWebinarsPage />} />
-          <Route path="events" element={<AdminPlaceholderPage title="Events" />} />
+          <Route path="events" element={<Navigate to="/admin/webinars" replace />} />
           <Route path="registrations" element={<AdminPlaceholderPage title="Registrations" />} />
           <Route path="orders" element={<AdminPlaceholderPage title="Orders" />} />
           <Route path="books" element={<AdminBooksPage />} />

@@ -117,7 +117,9 @@ const Testimonials = ({ content }: { content?: SectionContent }) => {
             640: { slidesPerView: 2 },
             1024: { slidesPerView: 3 },
           }}
-          className="!pb-2"
+          // Swiper clips overflow, so the hover lift needs vertical room or the
+          // card's top border gets cut off.
+          className="!py-5"
         >
           {testimonials.map((testimonial, index) => (
             <SwiperSlide key={`${testimonial.name}-${index}`} className="h-auto">

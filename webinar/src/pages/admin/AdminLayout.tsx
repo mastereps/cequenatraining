@@ -3,7 +3,6 @@ import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import {
   AiOutlineAppstore,
   AiOutlineBell,
-  AiOutlineCalendar,
   AiOutlineFileText,
   AiOutlineLeft,
   AiOutlineLogout,
@@ -31,7 +30,6 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { label: "Dashboard", to: "/admin", icon: <AiOutlineAppstore />, end: true },
   { label: "Webinars", to: "/admin/webinars", icon: <AiOutlineVideoCamera /> },
-  { label: "Events", to: "/admin/events", icon: <AiOutlineCalendar /> },
   { label: "Registrations", to: "/admin/registrations", icon: <AiOutlineTeam /> },
   { label: "Orders", to: "/admin/orders", icon: <AiOutlineShopping /> },
   { label: "Books", to: "/admin/books", icon: <AiOutlineRead /> },
