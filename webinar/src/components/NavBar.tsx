@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 import { useEffect, useState } from "react";
 import {
   AiOutlineClose,
@@ -66,15 +66,21 @@ const NavBar = () => {
         
       "
               >
-                <Link
-                  className="relative cursor-pointer inline-block
+                <NavLink
+                  end={href === "/"}
+                  className={({ isActive }) =>
+                    `relative cursor-pointer inline-block
       after:absolute after:left-0 after:-bottom-1 after:h-0.5 after:w-full after:bg-current
-      after:scale-x-0 after:origin-right after:transition-transform after:duration-300 after:ease-out
-      group-hover:after:scale-x-100 group-hover:after:origin-left"
+      after:transition-transform after:duration-300 after:ease-out ${
+        isActive
+          ? "font-semibold text-lantern after:scale-x-100 after:origin-left"
+          : "after:scale-x-0 after:origin-right group-hover:after:scale-x-100 group-hover:after:origin-left"
+      }`
+                  }
                   to={href}
                 >
                   {label}
-                </Link>
+                </NavLink>
               </li>
             ))}
             <li className="flex items-center p-4 text-slate-900 dark:text-slate-100">
@@ -173,15 +179,21 @@ const NavBar = () => {
                   key={label}
                   className="group relative px-4 py-2 border-b border-gray-600 last:border-b-0"
                 >
-                  <Link
+                  <NavLink
                     to={href}
-                    className="relative inline-block
+                    end={href === "/"}
+                    className={({ isActive }) =>
+                      `relative inline-block
                   after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-full after:bg-current
-                  after:scale-x-0 after:origin-right after:transition-transform after:duration-300 after:ease-out
-                  group-hover:after:scale-x-100 group-hover:after:origin-left"
+                  after:transition-transform after:duration-300 after:ease-out ${
+                    isActive
+                      ? "font-semibold text-lantern after:scale-x-100 after:origin-left"
+                      : "after:scale-x-0 after:origin-right group-hover:after:scale-x-100 group-hover:after:origin-left"
+                  }`
+                    }
                   >
                     {label}
-                  </Link>
+                  </NavLink>
                 </li>
               ))}
             </ul>
