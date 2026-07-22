@@ -70,11 +70,11 @@ const NavBar = () => {
                   end={href === "/"}
                   className={({ isActive }) =>
                     `relative cursor-pointer inline-block
-      after:absolute after:left-0 after:-bottom-1 after:h-0.5 after:w-full after:bg-current
+      after:absolute after:left-0 after:-bottom-1 after:h-0.5 after:w-full
       after:transition-transform after:duration-300 after:ease-out ${
         isActive
-          ? "font-semibold text-lantern after:scale-x-100 after:origin-left"
-          : "after:scale-x-0 after:origin-right group-hover:after:scale-x-100 group-hover:after:origin-left"
+          ? "font-semibold text-lantern after:scale-x-100 after:origin-left after:bg-[linear-gradient(90deg,transparent,#61b08b,transparent)] after:drop-shadow-[0_0_4px_#61b08b]"
+          : "after:bg-current after:scale-x-0 after:origin-right group-hover:after:scale-x-100 group-hover:after:origin-left"
       }`
                   }
                   to={href}
@@ -184,11 +184,11 @@ const NavBar = () => {
                     end={href === "/"}
                     className={({ isActive }) =>
                       `relative inline-block
-                  after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-full after:bg-current
+                  after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-full
                   after:transition-transform after:duration-300 after:ease-out ${
                     isActive
-                      ? "font-semibold text-lantern after:scale-x-100 after:origin-left"
-                      : "after:scale-x-0 after:origin-right group-hover:after:scale-x-100 group-hover:after:origin-left"
+                      ? "font-semibold text-lantern after:scale-x-100 after:origin-left after:bg-[linear-gradient(90deg,transparent,#61b08b,transparent)] after:drop-shadow-[0_0_4px_#61b08b]"
+                      : "after:bg-current after:scale-x-0 after:origin-right group-hover:after:scale-x-100 group-hover:after:origin-left"
                   }`
                     }
                   >
