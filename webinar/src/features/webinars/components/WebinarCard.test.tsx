@@ -70,6 +70,31 @@ describe("WebinarCard", () => {
     );
   });
 
+  it("falls back to a topic placeholder when no poster is uploaded", () => {
+    renderCard();
+
+    // The empty-state overlay marks the card as awaiting a real image.
+    expect(screen.getByText(/webinar image/i)).toBeInTheDocument();
+  });
+
+  it("shows the uploaded poster instead of the placeholder", () => {
+    const withPoster: Webinar = {
+      ...webinar,
+      poster_image_url: "/images/custom-poster.jpg",
+    };
+    render(
+      <MemoryRouter>
+        <WebinarCard webinar={withPoster} />
+      </MemoryRouter>,
+    );
+
+    expect(screen.queryByText(/webinar image/i)).toBeNull();
+    expect(screen.getByRole("img", { name: withPoster.title })).toHaveAttribute(
+      "src",
+      "/images/custom-poster.jpg",
+    );
+  });
+
   it("shows the payment review state for verified submissions", () => {
     setSubmittedEmailForWebinar(webinar.slug, "teacher@example.com");
     setSubmittedStatusForWebinar(webinar.slug, "verified");

@@ -23,6 +23,7 @@ import {
   type WebinarInput,
 } from "../../features/webinars/adminApi";
 import { formatManilaDateTime } from "../../features/webinars/format";
+import { getWebinarPlaceholder } from "../../features/webinars/placeholders";
 import ConfirmDialog from "./ConfirmDialog";
 
 type Tab = "upcoming" | "past" | "drafts" | "archived";
@@ -619,6 +620,20 @@ const AdminWebinarsPage = () => {
                 }}
               />
               {uploading === "poster" && <p className="text-xs text-slate-400">Uploading…</p>}
+              <div className="mt-3">
+                <div className="relative aspect-[16/10] w-full max-w-[240px] overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700">
+                  <img
+                    src={form.poster_image_url.trim() || getWebinarPlaceholder(form.topic, editingId ?? "")}
+                    alt="Poster preview"
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+                <p className="mt-1 text-xs text-slate-400">
+                  {form.poster_image_url.trim()
+                    ? "This poster will appear on the webinar card."
+                    : "No poster set — a default placeholder is shown on the card until you upload one."}
+                </p>
+              </div>
             </div>
             <div>
               <label className={labelClass} htmlFor="webinar-qr">
