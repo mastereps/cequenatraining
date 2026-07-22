@@ -15,11 +15,18 @@ export type ContentField =
   // Array of primitive strings (e.g. gallery image URLs, paragraphs).
   | { key: string; label: string; type: "stringList"; itemType: "text" | "textarea" | "image"; itemLabel?: string }
   // Array of objects with their own leaf fields (e.g. cards, stats, milestones).
-  | { key: string; label: string; type: "objectList"; itemLabel?: string; fields: LeafField[] };
+  | { key: string; label: string; type: "objectList"; itemLabel?: string; fields: LeafField[] }
+  // Ordered list of past-webinar slugs picked from the live webinar list.
+  | { key: string; label: string; type: "webinarPicker"; max?: number };
 
 // section_key -> editable fields. Sections omitted here (hero, featured_books,
 // latest_events, credibility) are reorder/visibility-only.
 export const SECTION_FIELD_SCHEMAS: Record<string, ContentField[]> = {
+  past_webinars: [
+    { key: "heading", label: "Heading", type: "text" },
+    { key: "subheading", label: "Subheading", type: "textarea" },
+    { key: "slugs", label: "Featured past webinars", type: "webinarPicker", max: 3 },
+  ],
   about_intro: [
     { key: "greeting", label: "Greeting", type: "text" },
     { key: "name_heading", label: "Name heading", type: "text" },

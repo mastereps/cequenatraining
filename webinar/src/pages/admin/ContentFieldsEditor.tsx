@@ -1,5 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { uploadContentImage } from "../../features/content/api";
+import { fetchWebinars } from "../../features/webinars/api";
+import { formatManilaDateTime } from "../../features/webinars/format";
+import { getWebinarPlaceholder } from "../../features/webinars/placeholders";
+import type { Webinar } from "../../features/webinars/types";
 import type { ContentField, LeafField, LeafType } from "../../features/content/fieldSchemas";
 import type { SectionContent } from "../../features/content/types";
 
@@ -71,6 +75,129 @@ const ImageField = ({
       </div>
       {uploading ? <p className="mt-1 text-xs text-slate-500">Uploading…</p> : null}
       {error ? <p className="mt-1 text-xs text-rose-600">{error}</p> : null}
+    </div>
+  );
+};
+
+// ---- Webinar picker ---------------------------------------------------------
+
+// Lets an admin curate which already-finished webinars a section features.
+// The stored value is an ordered array of webinar slugs; the live list is
+// fetched from the same public endpoint the marketing page reads.
+const WebinarPickerField = ({
+  label,
+  max,
+  value,
+  onChange,
+}: {
+  label: string;
+  max: number;
+  value: string[];
+  onChange: (next: string[]) => void;
+}) => {
+  const [webinars, setWebinars] = useState<Webinar[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    void (async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await fetchWebinars({ when: "past", limit: 100 });
+        if (active) setWebinars(data);
+      } catch (loadError) {
+        if (active) {
+          setError(loadError instanceof Error ? loadError.message : "Couldn't load past webinars.");
+        }
+      } finally {
+        if (active) setLoading(false);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const bySlug = new Map(webinars.map((webinar) => [webinar.slug, webinar]));
+  const selected = value.filter((slug) => bySlug.has(slug));
+  const isSelected = (slug: string) => value.includes(slug);
+  const atLimit = selected.length >= max;
+
+  const toggle = (slug: string) => {
+    if (isSelected(slug)) {
+      onChange(value.filter((item) => item !== slug));
+      return;
+    }
+    if (atLimit) return;
+    onChange([...value, slug]);
+  };
+
+  return (
+    <div>
+      <label className={labelClass}>
+        {label} <span className="font-normal text-slate-400">({selected.length}/{max} chosen)</span>
+      </label>
+      {loading ? <p className="text-sm text-slate-500">Loading past webinars…</p> : null}
+      {error ? <p className="text-sm text-rose-600">{error}</p> : null}
+      {!loading && !error && webinars.length === 0 ? (
+        <p className="text-sm text-slate-500">No past webinars yet.</p>
+      ) : null}
+
+      {!loading && !error && webinars.length > 0 ? (
+        <div className="max-h-96 space-y-2 overflow-y-auto rounded border border-slate-200 p-3 dark:border-slate-700">
+          {webinars.map((webinar) => {
+            const active = isSelected(webinar.slug);
+            const order = active ? value.indexOf(webinar.slug) + 1 : null;
+            const disabled = !active && atLimit;
+            return (
+              <div
+                key={webinar.id}
+                className={`flex items-center gap-3 rounded border p-2 transition ${
+                  active
+                    ? "border-emerald-400 bg-emerald-50 dark:border-emerald-500/60 dark:bg-emerald-500/10"
+                    : "border-slate-200 dark:border-slate-700"
+                } ${disabled ? "opacity-50" : ""}`}
+              >
+                <img
+                  src={webinar.poster_image_url || getWebinarPlaceholder(webinar.topic, webinar.id)}
+                  alt=""
+                  className="h-12 w-16 shrink-0 rounded object-cover"
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold">{webinar.title}</p>
+                  <p className="truncate text-xs text-slate-500 dark:text-slate-400">
+                    Held on {formatManilaDateTime(webinar.start_at)}
+                  </p>
+                </div>
+                {order ? (
+                  <span className="shrink-0 rounded-full bg-emerald-600 px-2 py-0.5 text-xs font-bold text-white">
+                    #{order}
+                  </span>
+                ) : null}
+                <button
+                  type="button"
+                  onClick={() => toggle(webinar.slug)}
+                  disabled={disabled}
+                  className={`shrink-0 rounded px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.08em] transition ${
+                    active
+                      ? "border border-rose-300 text-rose-600 hover:bg-rose-50 dark:border-rose-500/60 dark:hover:bg-rose-500/10"
+                      : "bg-slate-900 text-white hover:bg-slate-700 disabled:cursor-not-allowed dark:bg-slate-100 dark:text-slate-900"
+                  }`}
+                >
+                  {active ? "Remove" : "Add"}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      ) : null}
+      {atLimit ? (
+        <p className="mt-1 text-xs text-slate-500">
+          Limit reached. Remove one to choose a different webinar.
+        </p>
+      ) : null}
     </div>
   );
 };
@@ -304,6 +431,20 @@ const ContentFieldsEditor = ({
             <ObjectListField
               key={field.key}
               field={field}
+              value={value}
+              onChange={(next) => setField(field.key, next)}
+            />
+          );
+        }
+        if (field.type === "webinarPicker") {
+          const value = Array.isArray(content[field.key])
+            ? (content[field.key] as unknown[]).filter((item): item is string => typeof item === "string")
+            : [];
+          return (
+            <WebinarPickerField
+              key={field.key}
+              label={field.label}
+              max={field.max ?? 3}
               value={value}
               onChange={(next) => setField(field.key, next)}
             />

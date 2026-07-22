@@ -5,6 +5,7 @@ import WhatWeDo from "../../landing-page/components/WhatWeDo";
 import WhyChooseUs from "../../landing-page/components/WhyChooseUs";
 import FeaturedBooksSection from "../../landing-page/components/FeaturedBooksSection";
 import LatestEvents from "../../landing-page/components/LatestEvents";
+import PastWebinars from "../../landing-page/components/PastWebinars";
 import Testimonials from "../../landing-page/components/Testimonials";
 import Credibility from "../../landing-page/components/Credibility";
 import WhoWeAre from "../../components/WhoWeAre";
@@ -34,6 +35,7 @@ const REGISTRY: Record<ContentPage, Record<string, RegistryEntry>> = {
     why_choose_us: { Component: WhyChooseUs },
     featured_books: { Component: FeaturedBooksSection },
     latest_events: { Component: LatestEvents },
+    past_webinars: { Component: PastWebinars },
     testimonials: { Component: Testimonials },
     credibility: { Component: Credibility },
   },
@@ -57,6 +59,7 @@ const DEFAULT_ORDER: Record<ContentPage, string[]> = {
     "why_choose_us",
     "featured_books",
     "latest_events",
+    "past_webinars",
     "testimonials",
     "credibility",
   ],
