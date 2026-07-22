@@ -33,9 +33,6 @@ const WebinarCard = ({ webinar, past = false }: WebinarCardProps) => {
 
           <div className="mt-4 space-y-1 text-sm text-slate-500 dark:text-slate-400">
             <p>Held on {formatManilaDateTime(webinar.start_at)} (Asia/Manila)</p>
-            <p>
-              {webinar.verified_count} attendee{webinar.verified_count === 1 ? "" : "s"}
-            </p>
           </div>
 
           <div className="mt-6">

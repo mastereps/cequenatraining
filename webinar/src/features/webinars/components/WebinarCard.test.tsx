@@ -68,7 +68,6 @@ describe("WebinarCard", () => {
       "href",
       "/webinars/sample-webinar",
     );
-    expect(screen.getByText(/attendee/)).toBeInTheDocument();
   });
 
   it("shows the payment review state for verified submissions", () => {
